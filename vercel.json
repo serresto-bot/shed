@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/shed.html" },
+    { "source": "/shed-new", "destination": "/shed-new.html" },
+    { "source": "/shedme", "destination": "/shedme.html" },
+    { "source": "/shop", "destination": "/shop.html" }
+  ]
+}

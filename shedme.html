@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shed</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+:root{
+  --bg:#0E0B08;
+  --cream:#F7EEE5;
+  --gold:#8B6535;
+  --card:#131009;
+  --line:rgba(247,238,229,0.07);
+}
+
+html,body{
+  background:var(--bg);
+  color:var(--cream);
+  font-family:'Pretendard',sans-serif;
+  overflow-x:hidden;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;
+  padding:24px 40px;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:100;
+  background:linear-gradient(to bottom,rgba(14,11,8,0.9) 0%,transparent 100%);
+}
+.nav-brand{
+  font-size:13px;font-weight:300;
+  letter-spacing:.32em;text-transform:uppercase;
+  color:rgba(247,238,229,0.55);
+}
+.nav-links{display:flex;gap:28px;}
+.nav-link{
+  font-size:11px;font-weight:300;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(247,238,229,0.32);
+  text-decoration:none;
+  transition:color .25s;
+}
+.nav-link:hover{color:rgba(247,238,229,0.72);}
+
+/* ── SHARED ── */
+.section-tag{
+  font-size:10px;font-weight:300;
+  letter-spacing:.32em;text-transform:uppercase;
+  color:rgba(247,238,229,0.28);
+  margin-bottom:20px;
+}
+hr{border:none;border-top:1px solid var(--line);margin:0 40px;}
+
+/* ── HERO ── */
+.hero{
+  position:relative;width:100vw;height:100dvh;
+  overflow:hidden;display:flex;align-items:flex-end;
+}
+
+/* 아래 레이어: 골드 "쉼" */
+.hero-beneath{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.hero-char-beneath{
+  font-size:min(150vw,90dvh);font-weight:900;line-height:1;
+  color:rgba(247,238,229,0.82);
+  user-select:none;
+}
+
+/* Canvas 커버 */
+#eraseCanvas{
+  position:absolute;inset:0;
+  cursor:crosshair;
+  touch-action:none;
+  z-index:2;
+}
+
+.hero-copy{
+  position:relative;z-index:3;
+  padding:0 40px 64px;width:100%;
+  opacity:0;transition:opacity 1.5s ease;
+  pointer-events:none;
+}
+.hero-copy-sub{
+  font-size:11px;font-weight:300;letter-spacing:.24em;
+  color:rgba(247,238,229,0.38);margin-bottom:12px;
+}
+.hero-copy-title{
+  font-size:clamp(30px,8vw,54px);font-weight:700;
+  color:var(--cream);line-height:1.4;
+}
+.hero-scroll{
+  position:absolute;bottom:32px;right:40px;z-index:3;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  opacity:0;transition:opacity 1s ease;
+  pointer-events:none;
+}
+.hero-scroll-text{
+  font-size:9px;font-weight:300;letter-spacing:.24em;
+  color:rgba(247,238,229,0.22);text-transform:uppercase;
+  writing-mode:vertical-rl;
+}
+.hero-scroll-line{
+  width:1px;height:40px;
+  background:linear-gradient(to bottom,rgba(247,238,229,0.22),transparent);
+}
+
+/* ── ABOUT ── */
+.about{padding:120px 40px 100px;}
+.about-title{
+  font-size:clamp(32px,7vw,54px);font-weight:800;
+  color:var(--cream);line-height:1.2;
+  margin-bottom:32px;letter-spacing:-.01em;
+}
+.about-body{
+  font-size:16px;font-weight:300;
+  color:rgba(247,238,229,0.55);
+  line-height:1.9;max-width:520px;margin-bottom:64px;
+}
+.beliefs{display:flex;flex-direction:column;}
+.belief{
+  display:flex;align-items:baseline;gap:24px;
+  padding:22px 0;
+  border-bottom:1px solid var(--line);
+}
+.belief:first-child{border-top:1px solid var(--line);}
+.belief-num{
+  font-size:10px;font-weight:300;letter-spacing:.1em;
+  color:rgba(247,238,229,0.25);flex-shrink:0;width:24px;
+}
+.belief-text{
+  font-size:15px;font-weight:400;
+  color:rgba(247,238,229,0.7);line-height:1.5;
+}
+
+/* ── PRODUCTS ── */
+.products-header{padding:80px 40px 52px;}
+.products-intro{
+  font-size:clamp(15px,2.8vw,19px);font-weight:300;
+  color:rgba(247,238,229,0.38);line-height:1.75;
+  margin-top:16px;max-width:440px;
+}
+
+.products-split{
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+}
+
+.products-half{padding:60px 40px 72px;}
+
+.axis-label{
+  font-size:10px;font-weight:300;
+  letter-spacing:.32em;text-transform:uppercase;
+  color:var(--gold);display:block;margin-bottom:14px;
+}
+.axis-title{
+  font-size:clamp(28px,4.5vw,40px);font-weight:700;
+  color:var(--cream);line-height:1.2;margin-bottom:10px;
+}
+.axis-desc{
+  font-size:13px;font-weight:300;
+  color:rgba(247,238,229,0.35);line-height:1.7;
+  margin-bottom:40px;
+}
+
+.space-cards{display:flex;flex-direction:column;gap:8px;}
+.space-card{
+  display:flex;gap:0;align-items:stretch;
+  background:var(--card);border-radius:2px;overflow:hidden;
+}
+.space-card-thumb{width:64px;flex-shrink:0;}
+.space-card-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.space-card-ph{
+  width:64px;height:88px;flex-shrink:0;
+  background:linear-gradient(150deg,#1C140A,#191108);
+}
+.space-card-info{padding:14px 16px;flex:1;}
+.sc-status{
+  font-size:9px;font-weight:400;letter-spacing:.2em;
+  text-transform:uppercase;display:block;margin-bottom:5px;
+}
+.sc-status.avail{color:var(--gold);}
+.sc-status.soon{color:rgba(247,238,229,0.2);}
+.sc-name{font-size:13px;font-weight:500;color:var(--cream);margin-bottom:3px;}
+.sc-sub{font-size:11px;font-weight:300;color:rgba(247,238,229,0.3);}
+
+.products-divider{
+  display:flex;flex-direction:column;align-items:center;
+  padding:80px 0;
+}
+.pd-line{
+  flex:1;width:1px;
+  background:linear-gradient(to bottom,transparent,rgba(139,101,53,0.25));
+}
+.pd-line.bot{
+  background:linear-gradient(to bottom,rgba(139,101,53,0.25),transparent);
+}
+.pd-x{
+  font-size:14px;font-weight:300;
+  color:rgba(139,101,53,0.55);padding:18px 0;flex-shrink:0;
+}
+
+.time-list{display:flex;flex-direction:column;}
+.time-item{
+  display:flex;gap:20px;align-items:flex-start;
+  padding:20px 0;border-bottom:1px solid var(--line);
+}
+.time-item:first-child{border-top:1px solid var(--line);}
+.time-num{
+  font-size:10px;font-weight:300;letter-spacing:.08em;
+  color:rgba(247,238,229,0.2);flex-shrink:0;
+  padding-top:2px;width:20px;
+}
+.time-name{font-size:14px;font-weight:500;color:var(--cream);margin-bottom:4px;}
+.time-sub{font-size:12px;font-weight:300;color:rgba(247,238,229,0.32);line-height:1.6;}
+
+.products-meet{
+  padding:56px 40px 80px;text-align:center;
+  border-top:1px solid var(--line);
+}
+.meet-eq{
+  font-size:10px;font-weight:300;letter-spacing:.4em;
+  text-transform:uppercase;color:var(--gold);margin-bottom:14px;
+}
+.meet-msg{
+  font-size:clamp(17px,3.2vw,24px);font-weight:400;
+  color:rgba(247,238,229,0.55);line-height:1.6;
+}
+
+/* ── DIRECTING ── */
+.directing{padding:110px 40px 120px;}
+.directing-title{
+  font-size:clamp(26px,6vw,44px);font-weight:700;
+  color:var(--cream);line-height:1.35;
+  margin-bottom:20px;max-width:440px;
+}
+.directing-sub{
+  font-size:14px;font-weight:300;
+  color:rgba(247,238,229,0.42);
+  line-height:1.85;max-width:360px;margin-bottom:48px;
+}
+.directing-steps{
+  display:flex;flex-direction:column;gap:0;
+  max-width:480px;margin-bottom:52px;
+}
+.dstep{
+  display:flex;gap:20px;align-items:flex-start;
+  padding:18px 0;border-bottom:1px solid var(--line);
+}
+.dstep:first-child{border-top:1px solid var(--line);}
+.dstep-num{
+  font-size:10px;font-weight:300;letter-spacing:.08em;
+  color:rgba(247,238,229,0.25);flex-shrink:0;
+  padding-top:2px;width:20px;
+}
+.dstep-text{
+  font-size:14px;font-weight:400;
+  color:rgba(247,238,229,0.65);line-height:1.5;
+}
+.directing-btn{
+  display:inline-flex;align-items:center;gap:12px;
+  font-size:11px;font-weight:400;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cream);text-decoration:none;
+  border-bottom:1px solid rgba(247,238,229,0.22);
+  padding-bottom:8px;
+  transition:border-color .2s,opacity .2s;
+}
+.directing-btn:hover{opacity:.65;}
+
+/* ── STORY ── */
+.story{padding:80px 40px 120px;}
+.story-inner{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:64px;align-items:start;margin-top:48px;
+}
+.story-title{
+  font-size:clamp(22px,4.5vw,34px);font-weight:700;
+  color:var(--cream);line-height:1.35;margin-bottom:32px;
+}
+.story-body{
+  font-size:15px;font-weight:300;
+  color:rgba(247,238,229,0.52);line-height:1.95;
+}
+.story-body p+p{margin-top:22px;}
+.story-body em{
+  font-style:normal;
+  color:rgba(247,238,229,0.82);
+}
+.story-img{border-radius:3px;overflow:hidden;}
+.story-img img{width:100%;display:block;object-fit:cover;aspect-ratio:3/4;}
+
+/* ── FOOTER ── */
+footer{
+  padding:36px 40px 52px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--line);
+}
+.footer-brand{
+  font-size:11px;font-weight:300;
+  letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(247,238,229,0.22);
+}
+.footer-copy{
+  font-size:10px;font-weight:300;
+  color:rgba(247,238,229,0.16);letter-spacing:.06em;
+}
+
+/* ── SCROLL REVEAL ── */
+.reveal{
+  opacity:0;transform:translateY(28px);
+  transition:opacity 1s ease,transform 1s ease;
+}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ── NAV SHOP ── */
+.nav-shop{
+  font-size:11px;font-weight:300;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(247,238,229,0.55);
+  text-decoration:none;transition:color .25s;
+}
+.nav-shop:hover{color:var(--cream);}
+
+/* ── 반응형 ── */
+@media(max-width:640px){
+  nav{padding:20px 24px;}
+  .nav-links{display:none;}
+  .hero-copy{padding:0 24px 52px;}
+  hr{margin:0 24px;}
+  .about,.directing,.story{padding-left:24px;padding-right:24px;}
+  .products-header{padding:48px 24px 32px;}
+
+  /* 세로 배치 + × 구분 강화 */
+  .products-split{display:block;}
+  .products-half{padding:40px 24px 48px;}
+  .products-divider{
+    flex-direction:row;
+    width:auto;height:auto;
+    padding:8px 24px;
+    align-items:center;
+  }
+  .pd-line{
+    flex:1;height:1px;width:auto;
+    background:linear-gradient(to right,transparent,rgba(139,101,53,0.28));
+  }
+  .pd-line.bot{
+    background:linear-gradient(to right,rgba(139,101,53,0.28),transparent);
+  }
+  .pd-x{
+    padding:0 20px;
+    font-size:20px;color:rgba(139,101,53,0.6);
+  }
+
+  .products-meet{padding:36px 24px 52px;}
+  .story-inner{grid-template-columns:1fr;gap:36px;}
+  .story-img{order:-1;}
+  footer{padding:28px 24px 44px;flex-direction:column;gap:10px;align-items:flex-start;}
+}
+
+/* ── 애니메이션 ── */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(22px);}
+  to  {opacity:1;transform:translateY(0);}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-brand">Shed</span>
+  <div class="nav-links">
+    <a class="nav-link" href="#about">About</a>
+    <a class="nav-link" href="#products">Products</a>
+    <a class="nav-link" href="#directing">Directing</a>
+    <a class="nav-link" href="#story">Story</a>
+  </div>
+  <a class="nav-shop" href="/shop">Shop</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="heroSection">
+  <!-- 아래 레이어: 골드 쉼 -->
+  <div class="hero-beneath">
+    <div class="hero-char-beneath">쉼</div>
+  </div>
+  <!-- Canvas: 삶 커버 (지우개) -->
+  <canvas id="eraseCanvas"></canvas>
+  <!-- 카피: 지우기 완료 후 등장 -->
+  <div class="hero-copy" id="heroCopy">
+    <p class="hero-copy-sub">삶 속에서,</p>
+    <h1 class="hero-copy-title">쉼을<br>생각합니다.</h1>
+  </div>
+  <div class="hero-scroll" id="heroScroll">
+    <span class="hero-scroll-text">Scroll</span>
+    <div class="hero-scroll-line"></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about reveal" id="about">
+  <p class="section-tag">About Shed</p>
+  <h2 class="about-title">덜어내다,<br>벗어내다.</h2>
+  <p class="about-body">
+    Shed는 향으로 쉼의 도구를 만드는 브랜드예요.<br>
+    좋은 향을 파는 게 아니에요.<br>
+    쉼이 일어나는 순간을 설계해요.
+  </p>
+  <div class="beliefs">
+    <div class="belief">
+      <span class="belief-num">01</span>
+      <span class="belief-text">쉼은 아무것도 안 하는 것이 아니다</span>
+    </div>
+    <div class="belief">
+      <span class="belief-num">02</span>
+      <span class="belief-text">감각이 전환되는 순간, 진짜 쉼이 시작된다</span>
+    </div>
+    <div class="belief">
+      <span class="belief-num">03</span>
+      <span class="belief-text">향은 그 전환의 가장 오래된 신호다</span>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- PRODUCTS -->
+<section id="products">
+
+  <div class="products-header reveal">
+    <p class="section-tag">Products</p>
+    <p class="products-intro">Shed는 두 가지 방식으로 쉼을 만들어요.<br>공간에 두는 향, 그리고 시간을 끊어내는 리추얼.</p>
+  </div>
+
+  <div class="products-split">
+
+    <!-- SPACE -->
+    <div class="products-half reveal" id="halfSpace">
+      <span class="axis-label">Space · 공간</span>
+      <h3 class="axis-title">공간을<br>만들다</h3>
+      <p class="axis-desc">향으로 채우는 나만의 쉼의 장소</p>
+      <div class="space-cards">
+        <a class="space-card" href="/shop" style="cursor:pointer;text-decoration:none;">
+          <div class="space-card-thumb">
+            <img src="IMAGE/photo_2026-07-15_16-18-02.jpg" alt="사쉐">
+          </div>
+          <div class="space-card-info">
+            <span class="sc-status avail">Available</span>
+            <p class="sc-name">사쉐</p>
+            <p class="sc-sub">공간에 걸어두는 향</p>
+          </div>
+        </a>
+        <div class="space-card">
+          <div class="space-card-ph"></div>
+          <div class="space-card-info">
+            <span class="sc-status soon">Coming</span>
+            <p class="sc-name">디퓨저</p>
+            <p class="sc-sub">흐르듯 번지는 향</p>
+          </div>
+        </div>
+        <div class="space-card">
+          <div class="space-card-ph"></div>
+          <div class="space-card-info">
+            <span class="sc-status soon">Coming</span>
+            <p class="sc-name">캔들</p>
+            <p class="sc-sub">불을 켜는 순간의 향</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 교차선 -->
+    <div class="products-divider">
+      <div class="pd-line"></div>
+      <span class="pd-x">×</span>
+      <div class="pd-line bot"></div>
+    </div>
+
+    <!-- TIME -->
+    <div class="products-half reveal" id="halfTime">
+      <span class="axis-label">Time · 시간</span>
+      <h3 class="axis-title">순간을<br>만들다</h3>
+      <p class="axis-desc">리추얼로 끊어내는 나만의 쉼의 순간</p>
+      <div class="time-list">
+        <div class="time-item">
+          <span class="time-num">01</span>
+          <div>
+            <p class="time-name">디렉팅 세션</p>
+            <p class="time-sub">나를 쉬지 못하게 하는 생각을 함께 찾아요</p>
+          </div>
+        </div>
+        <div class="time-item">
+          <span class="time-num">02</span>
+          <div>
+            <p class="time-name">리추얼 워크북</p>
+            <p class="time-sub">나만의 쉼의 방식을 기록하고 다듬어요</p>
+          </div>
+        </div>
+        <div class="time-item">
+          <span class="time-num">03</span>
+          <div>
+            <p class="time-name">리추얼 스탬프 앱</p>
+            <p class="time-sub">매일 같은 순간, 쉼을 반복해요</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 교차점 메시지 -->
+  <div class="products-meet reveal">
+    <p class="meet-eq">Space × Time</p>
+    <p class="meet-msg">그 교차점에서,<br>진짜 쉼이 일어납니다.</p>
+  </div>
+
+</section>
+
+<hr>
+
+<!-- DIRECTING -->
+<section class="directing reveal" id="directing">
+  <p class="section-tag">Directing Session</p>
+  <h2 class="directing-title">그냥 향을<br>드리지 않아요.</h2>
+  <p class="directing-sub">
+    당신에게 맞는 향을 찾기 위해,<br>
+    먼저 당신에게 진짜 쉼이 무엇인지<br>
+    함께 찾을게요.
+  </p>
+  <div class="directing-steps">
+    <div class="dstep">
+      <span class="dstep-num">01</span>
+      <span class="dstep-text">진짜 휴식 찾기</span>
+    </div>
+    <div class="dstep">
+      <span class="dstep-num">02</span>
+      <span class="dstep-text">진짜 휴식과 어울리는 향 찾기</span>
+    </div>
+    <div class="dstep">
+      <span class="dstep-num">03</span>
+      <span class="dstep-text">사쉐 발송</span>
+    </div>
+    <div class="dstep">
+      <span class="dstep-num">04</span>
+      <span class="dstep-text">리추얼 스탬프 앱 제공</span>
+    </div>
+    <div class="dstep">
+      <span class="dstep-num">05</span>
+      <span class="dstep-text">향을 즐기며 리추얼 즐기기</span>
+    </div>
+  </div>
+  <a class="directing-btn" href="/shed-new">세션 시작하기 →</a>
+</section>
+
+<hr>
+
+<!-- STORY -->
+<section class="story reveal" id="story">
+  <p class="section-tag">Story</p>
+  <div class="story-inner">
+    <div class="story-text">
+      <h2 class="story-title">왜 Shed를<br>시작했나요.</h2>
+      <div class="story-body">
+        <p>
+          요즘 사람들은 쉬는 법을 잃어버렸어요.
+          퇴근하고 집에 와도, 주말이 와도 뭔가를 하고 있어요.
+          몸은 멈췄는데 <em>머릿속은 여전히 돌아가고 있어요.</em>
+        </p>
+        <p>
+          Shed는 그 틈에서 시작됐어요.
+          진짜 쉬는 것과 그냥 멈추는 것이 다르다는 걸 깨달았을 때.
+          그 둘 사이에 '감각의 전환'이 필요하다는 걸 알았을 때.
+        </p>
+        <p>
+          향은 가장 오래된 전환의 신호예요.
+          몸이 뇌보다 먼저 알아채요.
+          같은 향이 반복될 때,
+          <em>몸은 그 향이 날 때마다 쉬는 법을 기억하기 시작해요.</em>
+        </p>
+        <p>
+          우리는 그 신호를 만들어요.
+        </p>
+      </div>
+    </div>
+    <div class="story-img">
+      <img src="IMAGE/photo_2026-07-15_16-18-27.jpg" alt="Shed 사쉐">
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-brand">Shed</span>
+  <span class="footer-copy">© 2026 Shed. All rights reserved.</span>
+</footer>
+
+<script>
+// ── SCROLL REVEAL ──
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── HERO ERASE ──
+(function(){
+  const canvas = document.getElementById('eraseCanvas');
+  const ctx = canvas.getContext('2d');
+  const heroCopy = document.getElementById('heroCopy');
+  const heroScroll = document.getElementById('heroScroll');
+
+  let isErasing = false;
+  let completed = false;
+  let lastX = 0, lastY = 0;
+  let checkTimer = null;
+  let dpr = 1;
+
+  // 스크롤 잠금
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
+    drawCover();
+  }
+
+  function drawCover() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // 배경
+    ctx.fillStyle = '#0E0B08';
+    ctx.fillRect(0, 0, w, h);
+
+    const fs = Math.min(w * 1.35, h * 0.81);
+    ctx.font = `900 ${fs}px "Pretendard", sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.13)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('삶', w / 2, h / 2);
+
+    // 처음부터 살짝 긁혀있는 흔적
+    drawInitialScratches(w, h);
+  }
+
+  function drawInitialScratches(w, h) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+
+    // 각 그룹: 중심x, 중심y, 각도(deg), 선 수, 기본 길이
+    const groups = [
+      { x:w*.33, y:h*.46, angle:-22, n:6, len:62 },
+      { x:w*.61, y:h*.39, angle: 18, n:5, len:48 },
+      { x:w*.48, y:h*.57, angle: -6, n:7, len:70 },
+    ];
+
+    groups.forEach(g => {
+      const ar = g.angle * Math.PI / 180;
+      const perp = ar + Math.PI / 2;
+      for (let i = 0; i < g.n; i++) {
+        const spread = (i - (g.n-1)/2) * 3.2;
+        const jitter = (Math.random()-.5) * 4;
+        const len = g.len * (.6 + Math.random()*.8);
+        const lw = .7 + Math.random() * 1.6;
+        const startOff = (Math.random()-.5) * 10;
+        const angleVar = (Math.random()-.5) * .05;
+
+        const sx = g.x + Math.cos(perp)*(spread+jitter) + Math.cos(ar)*startOff;
+        const sy = g.y + Math.sin(perp)*(spread+jitter) + Math.sin(ar)*startOff;
+        const ex = sx + Math.cos(ar+angleVar)*len;
+        const ey = sy + Math.sin(ar+angleVar)*len;
+
+        ctx.globalAlpha = .5 + Math.random()*.5;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+    });
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function erase(x, y) {
+    if (completed) return;
+    const r = window.innerWidth < 640 ? 72 : 56;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = r * 2;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    lastX = x; lastY = y;
+  }
+
+  function checkProgress() {
+    if (completed) return;
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparent = 0, total = 0;
+    for (let i = 3; i < data.length; i += 32) {
+      if (data[i] < 50) transparent++;
+      total++;
+    }
+    if (transparent / total > 0.52) onComplete();
+  }
+
+  function onComplete() {
+    if (completed) return;
+    completed = true;
+
+    canvas.style.transition = 'opacity 1.2s ease';
+    canvas.style.opacity = '0';
+
+    setTimeout(() => {
+      canvas.style.pointerEvents = 'none';
+      heroCopy.style.opacity = '1';
+      heroCopy.style.pointerEvents = 'auto';
+      heroScroll.style.pointerEvents = 'auto';
+    }, 300);
+
+    setTimeout(() => {
+      heroScroll.style.opacity = '1';
+    }, 700);
+
+    setTimeout(() => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }, 1400);
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (completed) return;
+    isErasing = true;
+    const {x, y} = getPos(e);
+    lastX = x; lastY = y;
+    erase(x, y);
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!isErasing || completed) return;
+    const {x, y} = getPos(e);
+    erase(x, y);
+    clearTimeout(checkTimer);
+    checkTimer = setTimeout(checkProgress, 120);
+  });
+
+  canvas.addEventListener('pointerup', () => { isErasing = false; checkProgress(); });
+  canvas.addEventListener('pointercancel', () => { isErasing = false; });
+
+  document.fonts.ready.then(() => resize());
+  window.addEventListener('resize', () => { if (!completed) resize(); });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SHED Ritual</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+:root {
+  --gold: #8B6535;
+  --gold-dim: rgba(139,101,53,0.12);
+  --gold-mid: rgba(139,101,53,0.25);
+  --bg: #F7EEE5;
+  --bg2: #EDE2D2;
+  --text: #2C2016;
+  --text-mid: #7A6040;
+  --text-dim: #B09878;
+  --line: rgba(139,101,53,0.16);
+  --white: #FFFFFF;
+  --font: 'Pretendard Variable', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --r: 16px;
+  --safe-top: max(env(safe-area-inset-top), 20px);
+  --safe-bot: max(env(safe-area-inset-bottom), 28px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── App shell ── */
+#app {
+  height: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Splash ── */
+#splash {
+  position: fixed;
+  inset: 0;
+  max-width: 480px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity 0.7s ease;
+}
+#splash.out { opacity: 0; pointer-events: none; }
+.splash-logo {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.splash-logo.show { opacity: 1; transform: translateY(0); }
+.splash-name {
+  font-size: 0.88rem;
+  color: rgba(247,238,229,0.55);
+  margin-top: 20px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.splash-name.show { opacity: 1; }
+.splash-day {
+  font-size: 0.72rem;
+  color: rgba(139,101,53,0.65);
+  margin-top: 7px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.5s ease 0.12s;
+}
+.splash-day.show { opacity: 1; }
+
+/* ── Screens ── */
+.scr {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-top) 24px var(--safe-bot);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(28px);
+  transition: opacity 0.34s ease, transform 0.34s ease;
+}
+.scr.active  { opacity: 1; pointer-events: all; transform: translateY(0); }
+.scr.exiting { opacity: 0; transform: translateY(-18px); pointer-events: none; transition: opacity 0.28s ease, transform 0.28s ease; }
+
+/* ── Common ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-shrink: 0;
+}
+.logo { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.1em; color: var(--gold); }
+.tag  { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--gold); background: var(--gold-dim); padding: 5px 11px; border-radius: 20px; }
+
+.progress-row { display: flex; gap: 5px; margin-bottom: 28px; flex-shrink: 0; }
+.prog-dot { height: 4px; flex: 1; border-radius: 2px; background: var(--gold-dim); transition: background 0.4s ease; }
+.prog-dot.on { background: var(--gold); }
+
+.ttl { font-size: 1.4rem; font-weight: 800; line-height: 1.45; color: var(--text); margin-bottom: 8px; flex-shrink: 0; }
+.sub { font-size: 0.88rem; color: var(--text-mid); line-height: 1.65; margin-bottom: 32px; flex-shrink: 0; }
+.spacer { flex: 1; min-height: 12px; }
+
+/* ── Button ── */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 17px;
+  border: none;
+  border-radius: var(--r);
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+  text-align: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.btn:active { opacity: 0.82; transform: scale(0.98); }
+.btn-g { background: var(--gold); color: var(--bg); }
+.btn-o { background: transparent; color: var(--text-mid); border: 1.5px solid var(--line); margin-top: 10px; }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  transform: scale(0);
+  animation: rippleAnim 0.55s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes rippleAnim { to { transform: scale(5); opacity: 0; } }
+
+/* ── Today card ── */
+.today-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.tc-label { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 7px; }
+.tc-scent { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+.tc-hint  { font-size: 0.82rem; color: var(--text-mid); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ── Calendar ── */
+.cal-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 10px; flex-shrink: 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; margin-bottom: 16px; flex-shrink: 0; }
+.cd {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  font-size: 0.62rem; font-weight: 700;
+  transition: transform 0.15s;
+  position: relative;
+}
+.cd-future { background: var(--bg2); color: var(--text-dim); opacity: 0.45; }
+.cd-today  { background: var(--gold-dim); border: 2px solid var(--gold); color: var(--gold); cursor: pointer; }
+.cd-done   { background: var(--gold); color: var(--bg); cursor: pointer; }
+.cd-stamp  { font-size: 1rem; }
+.cd-missed { background: var(--bg2); border: 2px dashed #C8A870; color: #B08A4A; cursor: pointer; }
+.cd-today:active, .cd-missed:active { transform: scale(0.88); }
+@keyframes dotPop { from { transform: scale(0) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+.cd.new-dot { animation: dotPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+/* ── Mood trend ── */
+.trend-row { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; flex-shrink: 0; }
+.trend-label { font-size: 0.68rem; font-weight: 700; color: var(--text-dim); letter-spacing: 0.05em; white-space: nowrap; }
+.trend-emoji { font-size: 1.1rem; }
+.trend-empty { width: 26px; height: 26px; border-radius: 50%; background: var(--bg2); opacity: 0.4; }
+
+/* ── Done banner / hint ── */
+.done-banner { background: var(--gold-dim); border: 1px solid var(--gold-mid); border-radius: 12px; padding: 14px 18px; text-align: center; font-size: 0.88rem; color: var(--gold); font-weight: 600; margin-bottom: 14px; flex-shrink: 0; }
+.makeup-hint { text-align: center; font-size: 0.75rem; color: var(--text-dim); margin-top: 10px; flex-shrink: 0; }
+
+/* ── Mood selector ── */
+.mood-row { display: flex; gap: 8px; justify-content: space-between; margin-bottom: 32px; flex-shrink: 0; }
+.mood-btn {
+  flex: 1; aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid var(--line); background: var(--bg2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  font-size: 1.3rem; padding: 0;
+}
+.mood-btn em { font-style: normal; font-size: 0.5rem; font-weight: 700; color: var(--text-dim); margin-top: 3px; font-family: var(--font); line-height: 1; }
+.mood-btn.sel { border-color: var(--gold); background: var(--gold); }
+.mood-btn.sel em { color: rgba(247,238,229,0.75); }
+@keyframes moodBounce { 0%{transform:scale(1)} 35%{transform:scale(1.3)} 65%{transform:scale(0.92)} 100%{transform:scale(1)} }
+.mood-btn.bounce { animation: moodBounce 0.38s cubic-bezier(0.34,1.2,0.64,1); }
+
+/* ── Scent screen ── */
+.scent-wrap { text-align: center; padding: 24px 0 32px; flex-shrink: 0; }
+.scent-icon { font-size: 3.5rem; margin-bottom: 12px; display: block; animation: scentFloat 3.2s ease-in-out infinite; }
+@keyframes scentFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.scent-name { font-size: 1.1rem; font-weight: 800; color: var(--gold); letter-spacing: 0.04em; margin-bottom: 4px; }
+.scent-hint { font-size: 0.85rem; color: var(--text-mid); line-height: 1.6; }
+
+/* ── Breathing screen ── */
+.breath-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.breath-title { font-size: 1.1rem; font-weight: 800; color: var(--text); text-align: center; margin-bottom: 6px; }
+.breath-sub-txt { font-size: 0.85rem; color: var(--text-mid); text-align: center; line-height: 1.6; margin-bottom: 44px; }
+.breath-ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; width: 260px; height: 260px; }
+.breath-outer {
+  position: absolute;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  border: 1px solid rgba(139,101,53,0.18);
+  transition: transform 3.5s cubic-bezier(0.4,0,0.2,1), opacity 3.5s ease;
+  opacity: 0.3;
+}
+.breath-outer.inhale { transform: scale(1.18); opacity: 0.55; }
+.breath-outer.exhale { transform: scale(0.78); opacity: 0.15; }
+.breath-circle {
+  width: 160px; height: 160px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, rgba(196,146,74,0.32), rgba(139,101,53,0.07));
+  border: 2px solid var(--gold);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: width 3.5s cubic-bezier(0.4,0,0.2,1), height 3.5s cubic-bezier(0.4,0,0.2,1), box-shadow 3.5s ease;
+  position: relative; z-index: 1;
+}
+.breath-circle.inhale { width: 200px; height: 200px; box-shadow: 0 0 36px rgba(139,101,53,0.18); }
+.breath-circle.exhale { width: 128px; height: 128px; box-shadow: none; }
+.breath-icon { font-size: 1.7rem; }
+.breath-word { font-size: 0.82rem; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; margin-top: 5px; }
+.breath-count-txt { font-size: 0.65rem; color: var(--text-dim); letter-spacing: 0.08em; font-weight: 600; margin-top: 2px; }
+.skip-btn { background: none; border: none; font-family: var(--font); font-size: 0.8rem; color: var(--text-dim); cursor: pointer; padding: 6px 14px; letter-spacing: 0.03em; }
+.back-btn { background: none; border: none; font-size: 1.3rem; color: var(--text-dim); cursor: pointer; padding: 4px 10px 4px 0; line-height: 1; font-family: var(--font); }
+
+/* ── Ritual / Journal ── */
+.ritual-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; margin-bottom: 18px; flex-shrink: 0; }
+.r-name   { font-size: 0.7rem; font-weight: 700; color: var(--gold); letter-spacing: 0.04em; margin-bottom: 3px; }
+.r-day    { font-size: 0.63rem; color: var(--text-dim); font-weight: 600; margin-bottom: 14px; }
+.r-ptitle { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.r-ptext  { font-size: 0.875rem; color: var(--text-mid); line-height: 1.7; }
+.journal {
+  width: 100%; min-height: 150px;
+  border: 1.5px solid var(--line); border-radius: 12px;
+  background: var(--white); padding: 15px;
+  font-family: var(--font); font-size: 0.95rem; color: var(--text);
+  line-height: 1.7; resize: none; outline: none;
+  margin-bottom: 18px; flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.journal:focus { border-color: var(--gold); }
+.journal::placeholder { color: var(--text-dim); }
+
+/* ── Complete screen ── */
+.stamp-big {
+  width: 96px; height: 96px; border-radius: 50%;
+  background: var(--gold); color: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.4rem;
+  margin: 28px auto;
+  flex-shrink: 0;
+  position: relative;
+}
+.stamp-big.pop { animation: stampPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes stampPop { from{transform:scale(0.15) rotate(-20deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+.stamp-glow-ring { position: absolute; inset: 0; border-radius: 50%; }
+.stamp-glow-ring.glow { animation: glowExpand 1.3s ease-out 0.38s both; }
+@keyframes glowExpand { 0%{box-shadow:0 0 0 0 rgba(139,101,53,0.55)} 100%{box-shadow:0 0 0 52px rgba(139,101,53,0)} }
+.complete-ttl { text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 6px; flex-shrink: 0; }
+.complete-sub { text-align: center; font-size: 0.88rem; color: var(--text-mid); margin-bottom: 24px; flex-shrink: 0; }
+
+/* ── 14-Day complete screen ── */
+#s6 { background: linear-gradient(158deg, #4A2C0E 0%, #7A5228 38%, #B8863C 68%, #7A5228 100%); }
+#s6 .logo, #s6 .topbar { color: rgba(247,238,229,0.6); }
+.s6-icon { font-size: 2.8rem; text-align: center; margin: 12px 0 6px; flex-shrink: 0; animation: crownPop 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.2s both; }
+@keyframes crownPop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+.s6-ttl { font-size: 1.65rem; font-weight: 900; color: #F7EEE5; text-align: center; margin-bottom: 8px; flex-shrink: 0; }
+.s6-sub { font-size: 0.88rem; color: rgba(247,238,229,0.68); text-align: center; line-height: 1.65; margin-bottom: 28px; white-space: pre-line; flex-shrink: 0; }
+.stamps-full { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 24px; flex-shrink: 0; }
+.sf-dot {
+  aspect-ratio: 1; border-radius: 50%;
+  background: rgba(247,238,229,0.18); border: 1.5px solid rgba(247,238,229,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; color: #F7EEE5;
+  opacity: 0; transform: scale(0);
+  animation: dotPop 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+#s6 .btn-g { background: rgba(247,238,229,0.92); color: var(--gold); }
+
+/* ── Particles ── */
+.particle { position: fixed; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); pointer-events: none; z-index: 600; }
+
+/* ── Praise sheet ── */
+.praise-overlay { position: fixed; inset: 0; background: rgba(44,32,22,0.38); display: none; align-items: flex-end; z-index: 200; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.praise-overlay.open { display: flex; }
+.praise-sheet { width: 100%; max-width: 480px; margin: 0 auto; background: var(--bg); border-radius: 24px 24px 0 0; padding: 32px 24px var(--safe-bot); animation: sheetUp 0.4s cubic-bezier(0.34,1.2,0.64,1) both; }
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.praise-ttl  { font-size: 1.25rem; font-weight: 800; color: var(--gold); margin-bottom: 10px; }
+.praise-body { font-size: 0.9rem; color: var(--text-mid); line-height: 1.7; margin-bottom: 28px; }
+
+/* ── Error ── */
+#errScr { display: none; position: fixed; inset: 0; background: var(--bg); align-items: center; justify-content: center; flex-direction: column; padding: 40px 32px; text-align: center; gap: 16px; z-index: 300; }
+#errScr.show { display: flex; }
+#errMsg { color: var(--text-mid); font-size: 0.92rem; line-height: 1.65; white-space: pre-line; }
+</style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <span class="splash-logo" id="splashLogo">SHED.</span>
+  <p class="splash-name" id="splashName"></p>
+  <p class="splash-day"  id="splashDay"></p>
+</div>
+
+<div id="app">
+
+  <!-- S0: Home -->
+  <div class="scr" id="s0">
+    <div class="topbar">
+      <span class="logo">SHED.</span>
+      <span class="tag" id="s0tag">DAY 1</span>
+    </div>
+    <p class="ttl">안녕하세요,<br><span id="s0name"></span>님</p>
+    <div class="today-card" id="todayCard">
+      <p class="tc-label">오늘의 리추얼</p>
+      <p class="tc-scent" id="tcScent"></p>
+      <p class="tc-hint"  id="tcHint"></p>
+    </div>
+    <div id="s0doneBanner" class="done-banner" style="display:none;"></div>
+    <p class="cal-label">14일 여정</p>
+    <div class="cal-grid" id="cal0"></div>
+    <div class="trend-row" id="trendRow" style="display:none;">
+      <span class="trend-label">최근 기분</span>
+      <div id="trendDots" style="display:flex;gap:5px;align-items:center;"></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s0startBtn">오늘의 리추얼 시작하기</button>
+    <p class="makeup-hint" id="s0hint">지난 날을 채우려면 달력에서 날짜를 눌러요</p>
+  </div>
+
+  <!-- S1: Mood Before -->
+  <div class="scr" id="s1">
+    <div class="topbar">
+      <button class="back-btn" id="s1back">‹</button>
+      <span class="logo">SHED.</span>
+      <span class="tag" id="s1tag">DAY 1</span>
+    </div>
+    <div class="progress-row">
+      <div class="prog-dot on"></div><div class="prog-dot"></div><div class="prog-dot"></div><div class="prog-dot"></div><div class="prog-dot"></div>
+    </div>
+    <p class="ttl">리추얼 전,<br>지금 기분이 어떤가요?</p>
+    <p class="sub">솔직하게 골라주세요.</p>
+    <div class="mood-row" id="mbRow">
+      <button class="mood-btn" data-v="1">😔<em>많이<br>힘들어</em></button>
+      <button class="mood-btn" data-v="2">😕<em>좀<br>그래</em></button>
+      <button class="mood-btn" data-v="3">😐<em>보통<br>이야</em></button>
+      <button class="mood-btn" data-v="4">🙂<em>꽤<br>괜찮아</em></button>
+      <button class="mood-btn" data-v="5">😊<em>좋아!</em></button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s1next" disabled>다음</button>
+  </div>
+
+  <!-- S2: Scent Check -->
+  <div class="scr" id="s2">
+    <div class="topbar">
+      <button class="back-btn" id="s2back">‹</button>
+      <span class="logo">SHED.</span>
+      <span class="tag" id="s2tag">DAY 1</span>
+    </div>
+    <div class="progress-row">
+      <div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot"></div><div class="prog-dot"></div><div class="prog-dot"></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="scent-wrap">
+      <span class="scent-icon">🌿</span>
+      <p class="scent-name" id="s2scentName"></p>
+      <p class="ttl" style="margin-top:8px;">지금 곁에 있나요?</p>
+      <p class="scent-hint">향봉투를 꺼내어 가까이 두고<br>천천히 향을 맡으며 시작해봐요.</p>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s2yes">네, 준비됐어요</button>
+    <button class="btn btn-o" id="s2no">잠깐 찾아올게요</button>
+  </div>
+
+  <!-- S2b: Breathing Guide -->
+  <div class="scr" id="s2b">
+    <div class="topbar">
+      <button class="back-btn" id="s2bback">‹</button>
+      <span class="logo">SHED.</span>
+      <button class="skip-btn" id="breathSkip">건너뛰기</button>
+    </div>
+    <div class="progress-row">
+      <div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot"></div><div class="prog-dot"></div>
+    </div>
+    <div class="breath-wrap">
+      <p class="breath-title">향을 천천히 맡아봐요</p>
+      <p class="breath-sub-txt">눈을 감고, 호흡에 집중해요.</p>
+      <div class="breath-ring-wrap">
+        <div class="breath-outer" id="breathOuter"></div>
+        <div class="breath-circle" id="breathCircle">
+          <span class="breath-icon">🌿</span>
+          <span class="breath-word" id="breathWord">준비하세요</span>
+          <span class="breath-count-txt" id="breathCountTxt"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: Ritual Journal -->
+  <div class="scr" id="s3">
+    <div class="topbar">
+      <button class="back-btn" id="s3back">‹</button>
+      <span class="logo">SHED.</span>
+      <span class="tag" id="s3tag">DAY 1</span>
+    </div>
+    <div class="progress-row">
+      <div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot"></div>
+    </div>
+    <div class="ritual-card">
+      <p class="r-name"   id="s3rname"></p>
+      <p class="r-day"    id="s3rday"></p>
+      <p class="r-ptitle" id="s3ptitle"></p>
+      <p class="r-ptext"  id="s3ptext"></p>
+    </div>
+    <textarea class="journal" id="journalTxt" placeholder="여기에 자유롭게 적어요. 길어도, 짧아도 괜찮아요."></textarea>
+    <button class="btn btn-g" id="s3next">다 썼어요</button>
+    <div style="height:8px;flex-shrink:0;"></div>
+  </div>
+
+  <!-- S4: Mood After -->
+  <div class="scr" id="s4">
+    <div class="topbar">
+      <button class="back-btn" id="s4back">‹</button>
+      <span class="logo">SHED.</span>
+      <span class="tag" id="s4tag">DAY 1</span>
+    </div>
+    <div class="progress-row">
+      <div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div><div class="prog-dot on"></div>
+    </div>
+    <p class="ttl">리추얼을 마치고,<br>지금은 어떤가요?</p>
+    <p class="sub">솔직한 기분이 궁금해요.</p>
+    <div class="mood-row" id="maRow">
+      <button class="mood-btn" data-v="1">😔<em>많이<br>힘들어</em></button>
+      <button class="mood-btn" data-v="2">😕<em>좀<br>그래</em></button>
+      <button class="mood-btn" data-v="3">😐<em>보통<br>이야</em></button>
+      <button class="mood-btn" data-v="4">🙂<em>꽤<br>괜찮아</em></button>
+      <button class="mood-btn" data-v="5">😊<em>좋아!</em></button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s4next" disabled>완료하기</button>
+  </div>
+
+  <!-- S5: Complete -->
+  <div class="scr" id="s5">
+    <div class="topbar"><span class="logo">SHED.</span></div>
+    <div class="spacer"></div>
+    <div class="stamp-big" id="stampBig">
+      <div class="stamp-glow-ring" id="stampGlow"></div>
+      ✦
+    </div>
+    <p class="complete-ttl" id="s5ttl">오늘도 완료했어요</p>
+    <p class="complete-sub" id="s5sub">DAY 1 스탬프가 찍혔어요 ✦</p>
+    <p class="cal-label">14일 여정</p>
+    <div class="cal-grid" id="cal5"></div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s5done">홈으로</button>
+  </div>
+
+  <!-- S6: 14-Day Complete -->
+  <div class="scr" id="s6">
+    <div class="topbar"><span class="logo">SHED.</span></div>
+    <div class="spacer"></div>
+    <p class="s6-icon">✦</p>
+    <p class="s6-ttl">14일을 완주했어요</p>
+    <p class="s6-sub" id="s6sub"></p>
+    <div class="stamps-full" id="stampsFull"></div>
+    <div class="spacer"></div>
+    <button class="btn btn-g" id="s6done">처음으로</button>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Praise sheet -->
+<div class="praise-overlay" id="praiseOverlay">
+  <div class="praise-sheet">
+    <p class="praise-ttl"  id="praiseTtl"></p>
+    <p class="praise-body" id="praiseBody"></p>
+    <button class="btn btn-g" id="praiseClose">확인했어요</button>
+  </div>
+</div>
+
+<!-- Error -->
+<div id="errScr">
+  <span class="logo" style="font-size:1.1rem;">SHED.</span>
+  <p id="errMsg"></p>
+</div>
+
+<script src="ritual-data.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const S = {
+  name: '', code: '', pid: '', phone: '',
+  startDate: null, currentDay: 1, activeDay: 1,
+  moodBefore: null, moodAfter: null,
+  records: {}
+};
+
+// ── Audio (Web Audio API) ───────────────────────────────────────────────────
+let _ctx = null;
+function ctx() {
+  if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  return _ctx;
+}
+function tone(freq, dur = 0.35, vol = 0.1, delay = 0, type = 'sine') {
+  try {
+    const ac = ctx();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = type; o.frequency.value = freq;
+    const t = ac.currentTime + delay;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.025);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.06);
+  } catch(e) {}
+}
+const SFX = {
+  splash:     () => { tone(440, 1.1, 0.07); tone(660, 0.9, 0.05, 0.28); },
+  moodTones:  [262, 294, 330, 392, 440],
+  mood:       (v) => tone(SFX.moodTones[v - 1], 0.28, 0.09),
+  breathIn:   () => tone(528, 0.5, 0.055),
+  breathOut:  () => tone(396, 0.6, 0.05),
+  chime:      () => { tone(880, 0.75, 0.09); tone(1108, 0.65, 0.07, 0.2); },
+  stamp:      () => { tone(523, 0.35, 0.09); tone(659, 0.45, 0.08, 0.14); tone(784, 0.75, 0.07, 0.28); },
+  complete14: () => { tone(523, 1.4, 0.08); tone(659, 1.4, 0.07); tone(784, 1.4, 0.06); tone(1046, 1.6, 0.05, 0.12); },
+};
+
+// ── Haptic ─────────────────────────────────────────────────────────────────
+const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch(e) {} };
+const haptic = { light: () => vib(12), done: () => vib([18, 55, 28]), stamp: () => vib(55), big: () => vib([28, 70, 45, 70, 90]) };
+
+// ── Ripple ─────────────────────────────────────────────────────────────────
+function ripple(btn, e) {
+  const r = btn.getBoundingClientRect();
+  const el = document.createElement('span');
+  el.className = 'ripple';
+  const sz = Math.max(r.width, r.height);
+  const x = (e.clientX || r.left + r.width / 2) - r.left - sz / 2;
+  const y = (e.clientY || r.top  + r.height/ 2) - r.top  - sz / 2;
+  el.style.cssText = `width:${sz}px;height:${sz}px;left:${x}px;top:${y}px`;
+  btn.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+document.querySelectorAll('.btn').forEach(b => b.addEventListener('click', e => ripple(b, e)));
+
+// ── Particles ──────────────────────────────────────────────────────────────
+function burst(el) {
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    document.body.appendChild(p);
+    const angle = (Math.PI * 2 / 20) * i + (Math.random() - 0.5) * 0.5;
+    const dist  = 55 + Math.random() * 85;
+    p.style.left = (cx - 3.5) + 'px';
+    p.style.top  = (cy - 3.5) + 'px';
+    p.style.opacity = '1';
+    p.style.transition = `transform ${0.55 + Math.random() * 0.45}s cubic-bezier(0.2,0.8,0.3,1), opacity ${0.38 + Math.random() * 0.3}s ease ${0.28 + Math.random() * 0.2}s`;
+    requestAnimationFrame(() => {
+      p.style.transform = `translate(${Math.cos(angle)*dist}px,${Math.sin(angle)*dist}px) scale(${0.3 + Math.random() * 0.6})`;
+      p.style.opacity = '0';
+    });
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+function boot() {
+  const p = new URLSearchParams(location.search);
+  S.name  = decodeURIComponent(p.get('n') || '고객');
+  S.code  = (p.get('r') || '').toUpperCase();
+  S.pid   = p.get('p') || 'demo';
+  S.phone = p.get('ph') || '';
+  const d = p.get('d') || '';
+
+  if (!RITUAL_DATA[S.code]) {
+    showErr('올바르지 않은 리추얼 코드예요.\n링크를 다시 확인해주세요.');
+    return;
+  }
+
+  let sd;
+  if (/^\d{8}$/.test(d)) sd = new Date(+d.slice(0,4), +d.slice(4,6)-1, +d.slice(6,8));
+  else sd = new Date();
+  sd.setHours(0,0,0,0);
+  S.startDate = sd;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  S.currentDay = Math.min(Math.max(Math.floor((today - sd) / 86400000) + 1, 1), 14);
+  S.activeDay  = S.currentDay;
+
+  const raw = localStorage.getItem(lsKey());
+  if (raw) { try { S.records = JSON.parse(raw); } catch(e) {} }
+
+  showSplash();
+}
+
+function lsKey() { return `shed_${S.pid}`; }
+
+// ── Splash ─────────────────────────────────────────────────────────────────
+function showSplash() {
+  const logo   = document.getElementById('splashLogo');
+  const nameEl = document.getElementById('splashName');
+  const dayEl  = document.getElementById('splashDay');
+  nameEl.textContent = `${S.name}님, 환영해요`;
+  dayEl.textContent  = `DAY ${S.currentDay}  ·  ${RITUAL_DATA[S.code].scent}`;
+
+  setTimeout(() => { logo.classList.add('show'); SFX.splash(); }, 120);
+  setTimeout(() => nameEl.classList.add('show'), 620);
+  setTimeout(() => dayEl.classList.add('show'),  780);
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('out');
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      renderHome();
+      show('s0');
+    }, 720);
+  }, 2000);
+}
+
+// ── Screen manager ─────────────────────────────────────────────────────────
+let cur = null;
+function show(id) {
+  if (cur) {
+    const prev = document.getElementById(cur);
+    prev.classList.remove('active');
+    prev.classList.add('exiting');
+    setTimeout(() => prev.classList.remove('exiting'), 320);
+  }
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.scrollTop = 0;
+  cur = id;
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────
+function saveLocal() {
+  localStorage.setItem(lsKey(), JSON.stringify(S.records));
+  const reg = JSON.parse(localStorage.getItem('shed_registry') || '[]');
+  const idx = reg.findIndex(r => r.pid === S.pid && r.code === S.code);
+  const startStr = S.startDate.toISOString().slice(0, 10);
+  const entry = { pid: S.pid, name: S.name, code: S.code, phone: S.phone, startDate: startStr };
+  if (idx === -1) reg.push(entry); else reg[idx] = entry;
+  localStorage.setItem('shed_registry', JSON.stringify(reg));
+}
+
+function syncToSheets() {
+  const day = S.activeDay;
+  const rec = S.records[day];
+  if (!rec) return;
+  const startStr = S.startDate.toISOString().slice(0, 10);
+  fetch('/api/submit-ritual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pid: S.pid, name: S.name, phone4: S.phone,
+      code: S.code, startDate: startStr, day,
+      moodBefore: rec.moodBefore, moodAfter: rec.moodAfter,
+      journal: rec.journal, completedAt: rec.completedAt,
+    }),
+  }).catch(() => {});
+}
+
+function showErr(msg) {
+  document.getElementById('errMsg').textContent = msg;
+  document.getElementById('errScr').classList.add('show');
+}
+
+// ── Calendar ───────────────────────────────────────────────────────────────
+function buildCal(gridId, onTap, newDay) {
+  const g = document.getElementById(gridId);
+  g.innerHTML = '';
+  for (let d = 1; d <= 14; d++) {
+    const div = document.createElement('div');
+    div.className = 'cd';
+    const done = !!S.records[d], future = d > S.currentDay;
+    if (done) {
+      div.classList.add('cd-done');
+      div.innerHTML = '<span class="cd-stamp">✦</span>';
+      if (d === newDay) div.classList.add('new-dot');
+    } else if (d === S.currentDay) {
+      div.classList.add('cd-today');
+      div.textContent = d;
+    } else if (future) {
+      div.classList.add('cd-future');
+      div.textContent = d;
+    } else {
+      div.classList.add('cd-missed');
+      div.textContent = d;
+    }
+    if (!future && onTap) div.addEventListener('click', () => onTap(d));
+    g.appendChild(div);
+  }
+}
+
+// ── Home ───────────────────────────────────────────────────────────────────
+function renderHome() {
+  document.getElementById('s0name').textContent = S.name;
+  document.getElementById('s0tag').textContent  = `DAY ${Math.min(S.currentDay, 14)}`;
+
+  const ritual    = RITUAL_DATA[S.code];
+  const todayDone = !!S.records[S.currentDay];
+  const btn    = document.getElementById('s0startBtn');
+  const banner = document.getElementById('s0doneBanner');
+  const hint   = document.getElementById('s0hint');
+  const tcard  = document.getElementById('todayCard');
+
+  const prompt = ritual.prompts[Math.min(S.currentDay, 14) - 1];
+  document.getElementById('tcScent').textContent = `${ritual.scent}  ·  ${ritual.activity}`;
+  document.getElementById('tcHint').textContent  = (prompt.title ? prompt.title + ' — ' : '') + prompt.prompt;
+
+  if (S.currentDay > 14) {
+    tcard.style.display = 'none'; btn.style.display = 'none';
+    hint.style.display = 'none'; banner.style.display = 'none';
+  } else if (todayDone) {
+    tcard.style.display = 'none';
+    banner.style.display = 'block';
+    banner.textContent = `DAY ${S.currentDay} 완료 ✦  내일도 함께해요`;
+    btn.style.display = 'none';
+    hint.textContent = '지난 날을 채우려면 달력에서 날짜를 눌러요';
+  } else {
+    tcard.style.display = 'block'; banner.style.display = 'none';
+    btn.style.display = 'block'; btn.textContent = '오늘의 리추얼 시작하기'; btn.disabled = false;
+    hint.textContent = '지난 날을 채우려면 달력에서 날짜를 눌러요';
+  }
+
+  buildCal('cal0', (d) => { S.activeDay = d; startRitual(); });
+
+  // Mood trend
+  const keys = Object.keys(S.records).map(Number).sort((a,b) => a - b);
+  const trow  = document.getElementById('trendRow');
+  const tdots = document.getElementById('trendDots');
+  if (keys.length >= 2) {
+    trow.style.display = 'flex';
+    tdots.innerHTML = '';
+    const emojis = ['','😔','😕','😐','🙂','😊'];
+    const recent = keys.slice(-7);
+    const padCount = Math.max(0, 7 - recent.length);
+    for (let i = 0; i < padCount; i++) {
+      const e = document.createElement('div');
+      e.className = 'trend-empty';
+      tdots.appendChild(e);
+    }
+    recent.forEach(k => {
+      const e = document.createElement('span');
+      e.className = 'trend-emoji';
+      e.textContent = emojis[S.records[k].moodAfter || 3];
+      tdots.appendChild(e);
+    });
+  } else {
+    trow.style.display = 'none';
+  }
+}
+
+// ── Start ritual ───────────────────────────────────────────────────────────
+function startRitual() {
+  S.moodBefore = null; S.moodAfter = null;
+  document.getElementById('journalTxt').value = '';
+  resetMoodRow('mbRow'); resetMoodRow('maRow');
+  document.getElementById('s1next').disabled = true;
+  document.getElementById('s4next').disabled = true;
+
+  // Reset s2no button
+  const noBtn = document.getElementById('s2no');
+  noBtn.textContent = '잠깐 찾아올게요';
+  noBtn.className = 'btn btn-o';
+  noBtn.dataset.waiting = '';
+
+  ['s1tag','s2tag','s3tag','s4tag'].forEach(id =>
+    document.getElementById(id).textContent = `DAY ${S.activeDay}`
+  );
+
+  const ritual = RITUAL_DATA[S.code];
+  const prompt = ritual.prompts[S.activeDay - 1];
+
+  document.getElementById('s2scentName').textContent = ritual.scent;
+  document.getElementById('s3rname').textContent     = ritual.name;
+  document.getElementById('s3rday').textContent      = `DAY ${S.activeDay}  ·  ${ritual.activity}`;
+  const ptitleEl = document.getElementById('s3ptitle');
+  ptitleEl.textContent   = prompt.title || '';
+  ptitleEl.style.display = prompt.title ? '' : 'none';
+  document.getElementById('s3ptext').textContent = prompt.prompt;
+
+  const existing = S.records[S.activeDay];
+  if (existing) {
+    document.getElementById('journalTxt').value = existing.journal || '';
+    if (existing.moodBefore) {
+      S.moodBefore = existing.moodBefore;
+      selectMood('mbRow', existing.moodBefore);
+      document.getElementById('s1next').disabled = false;
+    }
+    if (existing.moodAfter) {
+      S.moodAfter = existing.moodAfter;
+      selectMood('maRow', existing.moodAfter);
+      document.getElementById('s4next').disabled = false;
+    }
+  }
+  show('s1');
+}
+
+// ── Mood helpers ───────────────────────────────────────────────────────────
+function resetMoodRow(rowId) {
+  document.getElementById(rowId).querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel', 'bounce'));
+}
+
+function selectMood(rowId, v) {
+  document.getElementById(rowId).querySelectorAll('.mood-btn').forEach(btn => {
+    if (+btn.dataset.v === v) btn.classList.add('sel');
+  });
+}
+
+function bindMoodRow(rowId, onPick) {
+  document.getElementById(rowId).querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      resetMoodRow(rowId);
+      btn.classList.add('sel');
+      btn.classList.remove('bounce');
+      requestAnimationFrame(() => btn.classList.add('bounce'));
+      haptic.light();
+      SFX.mood(+btn.dataset.v);
+      onPick(+btn.dataset.v);
+    });
+  });
+}
+
+// ── Breathing ──────────────────────────────────────────────────────────────
+let breathTid = null;
+function startBreathing() {
+  let cycle = 0;
+  const TOTAL = 3;
+  const circle = document.getElementById('breathCircle');
+  const outer  = document.getElementById('breathOuter');
+  const word   = document.getElementById('breathWord');
+  const cnt    = document.getElementById('breathCountTxt');
+
+  circle.className = 'breath-circle';
+  outer.className  = 'breath-outer';
+  word.textContent = '준비하세요';
+  cnt.textContent  = '';
+
+  function inhale() {
+    if (cycle >= TOTAL) {
+      word.textContent = '잘 하셨어요 ✦';
+      cnt.textContent  = '';
+      breathTid = setTimeout(() => show('s3'), 1100);
+      return;
+    }
+    cycle++;
+    cnt.textContent  = `${cycle} / ${TOTAL}`;
+    word.textContent = '들이쉬어요';
+    circle.classList.replace('exhale', 'inhale') || circle.classList.add('inhale');
+    outer.classList.replace('exhale', 'inhale')  || outer.classList.add('inhale');
+    SFX.breathIn();
+    breathTid = setTimeout(exhale, 3600);
+  }
+  function exhale() {
+    word.textContent = '내쉬어요';
+    circle.classList.replace('inhale', 'exhale') || circle.classList.add('exhale');
+    outer.classList.replace('inhale', 'exhale')  || outer.classList.add('exhale');
+    SFX.breathOut();
+    breathTid = setTimeout(inhale, 4600);
+  }
+
+  breathTid = setTimeout(inhale, 700);
+}
+
+function stopBreathing() {
+  clearTimeout(breathTid);
+  breathTid = null;
+  const circle = document.getElementById('breathCircle');
+  const outer  = document.getElementById('breathOuter');
+  circle.className = 'breath-circle';
+  outer.className  = 'breath-outer';
+}
+
+// ── Complete day ───────────────────────────────────────────────────────────
+function completeDay() {
+  const journal  = document.getElementById('journalTxt').value.trim();
+  const isMakeup = S.activeDay < S.currentDay;
+
+  S.records[S.activeDay] = {
+    moodBefore: S.moodBefore, moodAfter: S.moodAfter,
+    journal, completedAt: new Date().toISOString()
+  };
+  saveLocal();
+  syncToSheets();
+
+  document.getElementById('s5ttl').textContent = isMakeup ? `DAY ${S.activeDay} 소급 완료!` : '오늘도 완료했어요';
+  document.getElementById('s5sub').textContent = `DAY ${S.activeDay} 스탬프가 찍혔어요 ✦`;
+
+  buildCal('cal5', null, S.activeDay);
+  show('s5');
+
+  // stamp animation
+  const stamp = document.getElementById('stampBig');
+  const glow  = document.getElementById('stampGlow');
+  stamp.classList.remove('pop');
+  glow.classList.remove('glow');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    stamp.classList.add('pop');
+    glow.classList.add('glow');
+    haptic.stamp();
+    SFX.stamp();
+    setTimeout(() => burst(stamp), 420);
+  }));
+
+  const doneCount = Object.keys(S.records).length;
+  if (doneCount === 14) {
+    setTimeout(() => {
+      document.getElementById('praiseOverlay').classList.remove('open');
+      show14Complete();
+    }, 2600);
+  } else {
+    setTimeout(showPraise, 950);
+  }
+}
+
+// ── 14-Day complete ────────────────────────────────────────────────────────
+function show14Complete() {
+  document.getElementById('s6sub').textContent =
+    `${S.name}님의 14일 리추얼이 완성되었어요.\n향기로운 여정에 박수를 보내요. ✦`;
+
+  const grid = document.getElementById('stampsFull');
+  grid.innerHTML = '';
+  for (let d = 1; d <= 14; d++) {
+    const div = document.createElement('div');
+    div.className = 'sf-dot';
+    div.textContent = '✦';
+    div.style.animationDelay = `${0.1 + d * 0.07}s`;
+    grid.appendChild(div);
+  }
+
+  show('s6');
+  setTimeout(() => { SFX.complete14(); haptic.big(); }, 350);
+}
+
+// ── Praise ─────────────────────────────────────────────────────────────────
+function showPraise() {
+  const doneCount = Object.keys(S.records).length;
+  const delta = (S.moodAfter || 3) - (S.moodBefore || 3);
+  let msg;
+  if (doneCount === 7) {
+    msg = PRAISE_MESSAGES.milestone7;
+  } else {
+    const pool = delta > 0 ? PRAISE_MESSAGES.up : delta < 0 ? PRAISE_MESSAGES.down : PRAISE_MESSAGES.same;
+    msg = pool[Math.floor(Math.random() * pool.length)];
+  }
+  document.getElementById('praiseTtl').textContent  = msg.title;
+  document.getElementById('praiseBody').textContent = msg.body;
+  document.getElementById('praiseOverlay').classList.add('open');
+  SFX.chime();
+}
+
+// ── Back buttons ───────────────────────────────────────────────────────────
+document.getElementById('s1back').addEventListener('click', () => { renderHome(); show('s0'); });
+document.getElementById('s2back').addEventListener('click', () => show('s1'));
+document.getElementById('s2bback').addEventListener('click', () => { stopBreathing(); show('s2'); });
+document.getElementById('s3back').addEventListener('click', () => show('s2'));
+document.getElementById('s4back').addEventListener('click', () => show('s3'));
+
+// ── Event bindings ─────────────────────────────────────────────────────────
+document.getElementById('s0startBtn').addEventListener('click', () => {
+  S.activeDay = S.currentDay;
+  startRitual();
+});
+
+bindMoodRow('mbRow', (v) => {
+  S.moodBefore = v;
+  document.getElementById('s1next').disabled = false;
+});
+document.getElementById('s1next').addEventListener('click', () => show('s2'));
+
+document.getElementById('s2yes').addEventListener('click', () => { show('s2b'); startBreathing(); });
+
+document.getElementById('s2no').addEventListener('click', function() {
+  if (this.dataset.waiting) {
+    show('s2b');
+    startBreathing();
+  } else {
+    this.dataset.waiting = '1';
+    this.textContent = '준비됐어요 →';
+    this.className = 'btn btn-g';
+  }
+});
+
+document.getElementById('breathSkip').addEventListener('click', () => { stopBreathing(); show('s3'); });
+
+document.getElementById('s3next').addEventListener('click', () => show('s4'));
+
+bindMoodRow('maRow', (v) => {
+  S.moodAfter = v;
+  document.getElementById('s4next').disabled = false;
+});
+document.getElementById('s4next').addEventListener('click', () => { haptic.done(); completeDay(); });
+
+document.getElementById('praiseClose').addEventListener('click', () => {
+  document.getElementById('praiseOverlay').classList.remove('open');
+  renderHome(); show('s0');
+});
+document.getElementById('s5done').addEventListener('click', () => { renderHome(); show('s0'); });
+document.getElementById('s6done').addEventListener('click', () => { renderHome(); show('s0'); });
+
+document.getElementById('journalTxt').addEventListener('focus', () => {
+  setTimeout(() => { document.getElementById('s3').scrollTop = 9999; }, 300);
+});
+
+// ── Go ─────────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>

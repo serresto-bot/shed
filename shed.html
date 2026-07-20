@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shed · 덜어내다, 벗어내다</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --bg:      #F7EEE5;
+  --surface: #EDE2D6;
+  --sur2:    #E5D8CA;
+  --line:    rgba(0,0,0,0.08);
+  --linemid: rgba(0,0,0,0.15);
+  --gold:    #8B6535;
+  --gdim:    rgba(139,101,53,0.10);
+  --w:       #1E1610;
+  --w70:     rgba(30,22,16,0.70);
+  --w40:     rgba(30,22,16,0.40);
+  --w20:     rgba(30,22,16,0.20);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--w);
+  font-family:"Pretendard",-apple-system,"Apple SD Gothic Neo",sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.65}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input{font-family:inherit}
+
+/* ── PROGRESS ── */
+.prog{position:fixed;top:0;left:0;right:0;z-index:999;height:2px;background:var(--line)}
+.prog-fill{height:100%;background:var(--gold);transition:width .5s ease;width:0}
+
+/* ── TOP NAV ── */
+.tnav{position:fixed;top:0;left:0;right:0;z-index:998;height:56px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 20px;pointer-events:none}
+.tnav *{pointer-events:all}
+.btn-back{width:40px;height:40px;border-radius:50%;background:var(--surface);
+  border:1px solid var(--linemid);color:var(--w70);font-size:18px;
+  display:flex;align-items:center;justify-content:center;transition:opacity .2s,background .2s}
+.btn-back:hover{background:var(--sur2)}
+.btn-back.hidden{opacity:0;pointer-events:none}
+.tnav-brand{font-size:14px;font-weight:900;letter-spacing:.14em;color:var(--w40);
+  position:absolute;left:50%;transform:translateX(-50%)}
+.tnav-count{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--w40)}
+
+/* ── STEP ENGINE ── */
+.step{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:72px 24px 32px;transform:translateY(100vh);
+  transition:transform .55s cubic-bezier(.32,.72,0,1);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  background:linear-gradient(rgba(247,238,229,0.92),rgba(247,238,229,0.92)),url('4.jpg') right center/cover fixed;}
+.step.active{transform:translateY(0)}
+.step.past{transform:translateY(-100vh)}
+
+/* shared */
+.step-inner{max-width:560px;margin:0 auto;width:100%}
+.stag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.22em;
+  color:var(--gold);background:var(--gdim);padding:5px 12px;border-radius:999px;margin-bottom:16px}
+.stitle{font-size:clamp(26px,6vw,38px);font-weight:900;letter-spacing:-.02em;line-height:1.25;margin-bottom:10px}
+.ssub{font-size:14px;color:var(--w40);margin-bottom:28px;line-height:1.7}
+.btn-next{display:block;width:100%;background:var(--gold);color:var(--bg);
+  padding:18px 24px;border-radius:14px;font-size:16px;font-weight:900;
+  letter-spacing:.02em;transition:opacity .15s,transform .15s;margin-top:4px}
+.btn-next:hover{opacity:.88;transform:translateY(-1px)}
+
+/* ── STEP 0: 퀴즈 ── */
+.quiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qcard{position:relative;aspect-ratio:3/4;border-radius:16px;overflow:hidden;
+  cursor:pointer;border:2px solid transparent;transition:border-color .25s,transform .2s}
+.qcard:hover{transform:translateY(-4px);border-color:var(--gold)}
+.qcard-bg{position:absolute;inset:0;background-size:cover;background-position:center;
+  transition:transform .5s ease}
+.qcard:hover .qcard-bg{transform:scale(1.06)}
+.qcard-dim{position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.1) 55%,transparent 100%)}
+.qcard-inner{position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;padding:16px 14px;text-align:center}
+.qemoji{font-size:24px;margin-bottom:10px}
+.qlabel{font-size:15px;font-weight:900;color:#fff;line-height:1.35;
+  text-shadow:0 2px 12px rgba(0,0,0,.85),0 1px 3px rgba(0,0,0,.9)}
+.qhint{margin-top:8px;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--gold);
+  opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s;
+  text-shadow:none}
+.qcard:hover .qhint{opacity:1;transform:translateY(0)}
+
+/* ── STEP 1: 퀴즈 결과 ── */
+.step-result{padding:0;justify-content:flex-end}
+.result-bg{position:absolute;inset:0;background-size:cover;background-position:center;
+  transition:transform 1.4s cubic-bezier(.25,.46,.45,.94)}
+.step-result.active .result-bg{transform:scale(1)}
+.result-bg{transform:scale(1.06)}
+.result-dim{position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,.22) 48%,rgba(0,0,0,.02) 100%)}
+.result-content{position:relative;z-index:2;padding:0 24px 52px;max-width:600px}
+.result-joke{font-size:clamp(22px,5vw,30px);font-weight:900;letter-spacing:-.02em;
+  line-height:1.3;color:#fff;white-space:pre-line;margin-bottom:24px}
+.rlabel{font-size:10px;font-weight:800;letter-spacing:.22em;color:var(--gold);margin-bottom:12px}
+.rlist{display:flex;flex-direction:column;gap:8px;margin-bottom:28px}
+.ritem{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;
+  background:rgba(255,255,255,.09);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.13);border-radius:12px;
+  font-size:14px;color:#fff;font-weight:600}
+.rnum{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--gold);
+  color:var(--bg);font-size:11px;font-weight:900;display:flex;align-items:center;
+  justify-content:center;margin-top:1px}
+
+/* ── STEP 2: 공감 ── */
+.eg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ebtn{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;
+  padding:28px 12px;display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-size:36px;cursor:pointer;transition:border-color .2s,background .2s,transform .2s,opacity .2s}
+.ebtn span{font-size:13px;font-weight:700;color:var(--w70);line-height:1.4;text-align:center}
+.ebtn:hover{border-color:var(--gold);background:var(--gdim);transform:translateY(-2px)}
+.ebtn.sel{border-color:var(--gold);background:var(--gdim)}
+.ebtn.sel span{color:var(--w)}
+.ebtn.dim{opacity:.28;transform:scale(.97)}
+
+/* ── STEP 3: 리액션 ── */
+.re-emoji{font-size:48px;margin-bottom:20px;line-height:1}
+.re-msg{font-size:clamp(22px,5vw,30px);font-weight:900;line-height:1.35;
+  letter-spacing:-.02em;white-space:pre-line;color:var(--w);margin-bottom:14px}
+.re-bridge{font-size:15px;color:var(--w70);line-height:1.85;margin-bottom:10px}
+.re-hook{font-size:16px;font-weight:800;color:var(--gold);line-height:1.6;margin-bottom:32px}
+
+/* ── STEP 4: 사쉐 소개 ── */
+.sopts{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.sopt{background:var(--surface);border:1.5px solid var(--linemid);border-radius:14px;
+  padding:20px;display:flex;align-items:center;gap:16px;cursor:pointer;
+  text-align:left;transition:border-color .2s,background .2s,transform .2s}
+.sopt:hover{border-color:var(--gold);background:var(--gdim);transform:translateX(4px)}
+.sopt-icon{font-size:28px;flex-shrink:0}
+.sopt-title{font-size:16px;font-weight:800;color:var(--w);margin-bottom:2px}
+.sopt-sub{font-size:12px;color:var(--w40)}
+.sreaction{margin-top:18px;padding:15px 18px;background:var(--gdim);
+  border:1px solid rgba(200,169,110,.3);border-radius:12px;
+  font-size:14px;color:var(--w70);line-height:1.7;display:none}
+.sreaction.show{display:block}
+
+/* ── STEP 6: 사쉐 레퍼런스 ── */
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:20px 0 28px}
+.ref-card{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden}
+.ref-card-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.ref-card-label{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:20px 12px 12px;
+  background:linear-gradient(to top,rgba(30,22,16,.7) 0%,transparent 100%);
+  font-size:11px;font-weight:700;color:#fff;letter-spacing:.05em;
+}
+
+/* ── STEP 7: 이벤트 ── */
+.step-event{}
+.ev-badge{display:inline-block;background:var(--gold);color:var(--bg);
+  font-size:12px;font-weight:900;letter-spacing:.1em;padding:6px 16px;
+  border-radius:999px;margin-bottom:20px}
+.ev-title{font-size:clamp(30px,8vw,48px);font-weight:900;letter-spacing:-.025em;
+  line-height:1.15;margin-bottom:8px}
+.ev-sub{font-size:14px;color:var(--w70);margin-bottom:24px;line-height:1.7}
+.ev-card{background:var(--bg);border:1px solid var(--linemid);border-radius:18px;
+  overflow:hidden;margin-bottom:22px}
+.ev-img{width:100%;display:block;object-fit:cover;max-height:220px}
+.ev-body{padding:18px 20px 20px}
+.ev-tag{font-size:10px;font-weight:800;letter-spacing:.18em;color:var(--gold);margin-bottom:12px}
+.ev-items{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.ev-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--w70)}
+.ev-chk{color:var(--gold);font-size:15px;flex-shrink:0}
+.ev-div{height:1px;background:var(--linemid);margin:14px 0}
+.ev-free{font-size:22px;font-weight:900;color:var(--gold);display:flex;align-items:center;gap:8px}
+.ev-dl{font-size:11px;color:var(--w40);margin-top:4px}
+
+/* ── STEP 6: 폼 ── */
+.ffields{display:flex;flex-direction:column;gap:14px}
+.flabel{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--w40);margin-bottom:6px;display:block}
+.finput{width:100%;background:var(--sur2);border:1.5px solid var(--line);border-radius:10px;
+  padding:15px 16px;font-size:15px;color:var(--w);outline:none;transition:border-color .2s}
+.finput::placeholder{color:var(--w40)}
+.finput:focus{border-color:var(--gold)}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;
+  padding:14px 10px;font-size:12px;font-weight:700;color:var(--w70);
+  text-align:center;line-height:1.45;cursor:pointer;transition:border-color .2s,background .2s,color .2s}
+.chip:hover{border-color:var(--gold);background:var(--gdim)}
+.chip.sel{border-color:var(--gold);background:var(--gdim);color:var(--w)}
+
+/* ── STEP 7: 완료 ── */
+.done{text-align:center}
+.done-emoji{font-size:56px;margin-bottom:24px;line-height:1}
+.done-title{font-size:clamp(28px,7vw,44px);font-weight:900;letter-spacing:-.02em;
+  line-height:1.2;margin-bottom:12px}
+.done-sub{font-size:15px;color:var(--w70);line-height:1.9;margin-bottom:28px}
+.done-scent{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.1em;
+  color:var(--gold);background:var(--gdim);border:1px solid rgba(200,169,110,.3);
+  padding:8px 20px;border-radius:999px;margin-bottom:36px}
+.btn-insta{display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;max-width:320px;margin:0 auto;
+  background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+  color:#fff;padding:16px 24px;border-radius:14px;font-size:15px;font-weight:800;
+  text-decoration:none;transition:opacity .15s}
+.btn-insta:hover{opacity:.9}
+
+
+/* ── 브랜드 소개 ── */
+.brand-intro {
+  font-size: 17px; color: var(--w70);
+  line-height: 1.9; margin-bottom: 20px;
+}
+.brand-bridge {
+  font-size: 17px; font-weight: 700;
+  color: var(--w); line-height: 1.75;
+  margin-bottom: 36px;
+}
+#s2 {
+  justify-content: flex-end;
+  padding: 0;
+  background: none;
+}
+.s2-bg {
+  position: absolute; inset: 0;
+  overflow: hidden;
+}
+.s2-bg img {
+  width: 100%; height: 130%;
+  object-fit: cover;
+  object-position: center bottom;
+  position: absolute; bottom: 0; left: 0;
+}
+.s2-grad {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, #EAE0D4 0%, #EAE0D4 28%, rgba(234,224,212,0.7) 55%, transparent 100%);
+}
+.s2-content {
+  position: relative; z-index: 2;
+  padding: 0 24px 48px;
+  max-width: 560px; width: 100%;
+}
+
+/* ── QUIZ 풀스크린 ── */
+#s0{padding:0;overflow:hidden}
+
+.quiz-header{
+  position:absolute;
+  top:56px;left:50%;
+  transform:translateX(-50%);
+  z-index:10;
+  text-align:center;
+  padding:10px 20px;
+  background:rgba(0,0,0,0.38);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-radius:12px;
+  pointer-events:none;
+  width:max-content;
+  max-width:calc(100% - 48px);
+}
+.quiz-header-title{
+  font-size:clamp(15px,4vw,20px);font-weight:900;
+  letter-spacing:-.02em;line-height:1.25;color:#fff;
+  margin-bottom:3px;
+}
+.quiz-header-sub{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.05em}
+
+#s0 .quiz-grid{
+  position:absolute;inset:0;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;
+  gap:0;
+}
+#s0 .qcard{flex:unset;aspect-ratio:unset;border-radius:0;min-height:unset;border:none}
+#s0 .qcard-bg{background-position:left center}
+#s0 .qcard:hover{transform:none;border-color:transparent}
+#s0 .qcard-dim{display:none}
+
+/* ── APPLY MODAL ── */
+.apply-backdrop{
+  position:fixed;inset:0;
+  background:rgba(30,22,16,0.6);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:500;display:flex;align-items:flex-end;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.apply-backdrop.open{opacity:1;pointer-events:auto}
+.apply-modal{
+  background:var(--bg);color:var(--w);
+  border-radius:24px;width:100%;max-width:460px;
+  max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;
+  padding:28px 22px 32px;position:relative;
+  transform:translateY(24px);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 24px 60px rgba(0,0,0,0.28);
+}
+.apply-backdrop.open .apply-modal{transform:translateY(0)}
+.apply-modal::-webkit-scrollbar{width:0}
+.apply-close{
+  position:absolute;top:12px;right:12px;
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--line);color:var(--w);
+  font-size:18px;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.apply-close:hover{background:var(--sur2)}
+.apply-kicker{
+  color:var(--gold);font-size:11px;font-weight:800;
+  letter-spacing:.16em;text-align:center;
+  margin-bottom:8px;text-transform:uppercase;
+}
+.apply-title{
+  text-align:center;font-size:22px;font-weight:800;
+  margin:0 0 8px;letter-spacing:-.01em;line-height:1.3;
+}
+.apply-title span{color:var(--gold)}
+.apply-lede{
+  text-align:center;color:var(--w70);
+  font-size:13.5px;margin:0 0 22px;line-height:1.6;
+}
+.apply-field{margin-bottom:14px}
+.apply-row{display:flex;gap:10px}
+.apply-row>div label{display:block;font-size:13px;font-weight:700;color:var(--w);margin-bottom:6px}
+.apply-row>div input{width:100%}
+.apply-field label{
+  display:block;font-size:13px;font-weight:700;
+  color:var(--w);margin-bottom:6px;
+}
+.apply-field input[type="text"],
+.apply-field input[type="tel"]{
+  width:100%;padding:12px 14px;
+  border:1.5px solid var(--line);border-radius:12px;
+  font-size:15px;font-family:inherit;
+  background:var(--surface);color:var(--w);
+  -webkit-appearance:none;appearance:none;outline:none;
+  transition:border-color .2s;
+}
+.apply-field input:focus{border-color:var(--gold)}
+.apply-field input::placeholder{color:var(--w40)}
+.apply-region-wrap{margin:6px 0 4px}
+.apply-region-map{width:100%;display:block}
+.apply-region-group{cursor:pointer}
+.apply-region-group path{
+  fill:var(--surface);stroke:var(--linemid);
+  stroke-width:.6;vector-effect:non-scaling-stroke;
+  transition:fill .15s ease;
+}
+.apply-region-group:hover path{fill:var(--gdim)}
+.apply-region-group.selected path{fill:var(--gold);stroke:var(--gold)}
+.apply-region-labels text{
+  pointer-events:none;font-size:11px;font-weight:700;
+  fill:var(--w);font-family:inherit;
+  paint-order:stroke;stroke:rgba(247,238,229,.8);
+  stroke-width:3;stroke-linejoin:round;
+}
+.apply-region-labels text.selected{fill:var(--bg);stroke:rgba(0,0,0,.2)}
+.apply-region-other-wrap{text-align:center;margin-top:8px}
+.apply-region-other-btn{
+  background:var(--surface);border:1px solid var(--line);
+  color:var(--w70);padding:7px 16px;border-radius:999px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  transition:all .15s ease;font-family:inherit;
+}
+.apply-region-other-btn:hover{background:var(--gdim)}
+.apply-region-other-btn.selected{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.apply-region-error{text-align:center;color:#b94a2c;font-size:12px;margin-top:4px}
+.modal-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.modal-chip{
+  background:var(--surface);border:1.5px solid var(--line);border-radius:10px;
+  padding:14px 10px;font-size:12px;font-weight:700;color:var(--w70);
+  text-align:center;line-height:1.45;cursor:pointer;
+  transition:border-color .2s,background .2s,color .2s;font-family:inherit;
+}
+.modal-chip:hover{border-color:var(--gold);background:var(--gdim)}
+.modal-chip.sel{border-color:var(--gold);background:var(--gdim);color:var(--w)}
+.apply-submit{
+  width:100%;background:var(--gold);color:var(--bg);
+  border:0;padding:14px;border-radius:999px;
+  font-weight:800;font-size:15px;cursor:pointer;
+  margin-top:8px;font-family:inherit;transition:transform .15s,opacity .15s;
+}
+.apply-submit:active{transform:scale(.98)}
+.apply-submit:disabled{opacity:.5;cursor:wait}
+.apply-form-note{font-size:11px;color:var(--w40);text-align:center;margin-top:14px;line-height:1.6}
+.apply-success{display:none;text-align:center;padding:30px 0 10px}
+.apply-success.show{display:block}
+.apply-success .s-emoji{font-size:56px;margin-bottom:12px}
+.apply-success .s-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.apply-success .s-title span{color:var(--gold)}
+.apply-success .s-desc{color:var(--w70);font-size:14px;line-height:1.7}
+.apply-success .s-ok{
+  display:inline-block;margin-top:22px;background:var(--gold);color:var(--bg);
+  font-weight:800;font-size:13px;padding:11px 22px;
+  border-radius:999px;border:0;cursor:pointer;font-family:inherit;
+}
+
+@media(max-width:440px){
+  .qlabel{font-size:13px}
+  .ebtn{padding:14px 10px;font-size:22px}
+  .ebtn span{font-size:11px}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* step-inner 자식 stagger */
+.step.active .step-inner > * {
+  animation:fadeUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+.step.active .step-inner > *:nth-child(1){animation-delay:.10s}
+.step.active .step-inner > *:nth-child(2){animation-delay:.18s}
+.step.active .step-inner > *:nth-child(3){animation-delay:.26s}
+.step.active .step-inner > *:nth-child(4){animation-delay:.33s}
+.step.active .step-inner > *:nth-child(5){animation-delay:.39s}
+.step.active .step-inner > *:nth-child(6){animation-delay:.44s}
+
+/* s2 브랜드 소개 stagger */
+.step.active .s2-content > * {
+  animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both;
+}
+.step.active .s2-content > *:nth-child(1){animation-delay:.18s}
+.step.active .s2-content > *:nth-child(2){animation-delay:.26s}
+.step.active .s2-content > *:nth-child(3){animation-delay:.34s}
+.step.active .s2-content > *:nth-child(4){animation-delay:.42s}
+.step.active .s2-content > *:nth-child(5){animation-delay:.49s}
+
+/* s1 결과 stagger */
+.step.active .result-content > * {
+  animation:fadeUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+.step.active .result-content > *:nth-child(1){animation-delay:.12s}
+.step.active .result-content > *:nth-child(2){animation-delay:.22s}
+.step.active .result-content > *:nth-child(3){animation-delay:.30s}
+.step.active .result-content > *:nth-child(4){animation-delay:.37s}
+
+/* s6 레퍼런스 카드 stagger */
+.step.active .ref-grid .ref-card {
+  animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both;
+}
+.step.active .ref-grid .ref-card:nth-child(1){animation-delay:.28s}
+.step.active .ref-grid .ref-card:nth-child(2){animation-delay:.35s}
+.step.active .ref-grid .ref-card:nth-child(3){animation-delay:.42s}
+.step.active .ref-grid .ref-card:nth-child(4){animation-delay:.49s}
+
+/* ── 터치 피드백 ── */
+@media (hover:none) {
+  .ebtn:active     {transform:scale(0.93) !important;transition-duration:.08s !important}
+  .btn-next:active {transform:scale(0.96) !important;transition-duration:.08s !important}
+  .sopt:active     {transform:scale(0.97) !important;transition-duration:.08s !important}
+  .modal-chip:active{transform:scale(0.94) !important;transition-duration:.08s !important}
+  .qcard:active    {opacity:.8 !important}
+  .btn-back:active {transform:scale(0.91) !important}
+  .apply-close:active{transform:scale(0.91) !important}
+}
+
+/* ── 공감 버튼 선택 pulse ── */
+@keyframes ebtn-pop {
+  0%   {transform:scale(1)}
+  45%  {transform:scale(1.07)}
+  100% {transform:scale(1)}
+}
+.ebtn.popping{animation:ebtn-pop .35s cubic-bezier(.22,1,.36,1) !important}
+
+/* ── s2 ken burns ── */
+@keyframes kenburns {
+  from {transform:scale(1)}
+  to   {transform:scale(1.09)}
+}
+#s2.active .s2-bg img {
+  animation:kenburns 14s ease-out forwards;
+}
+
+/* ── s7 CTA glow pulse ── */
+@keyframes glow-pulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(139,101,53,0)}
+  50%    {box-shadow:0 4px 24px rgba(139,101,53,0.35),0 0 0 8px rgba(139,101,53,0.10)}
+}
+#s7 .btn-next{animation:glow-pulse 2.4s ease-in-out infinite}
+
+/* ── s7 아이템 stagger ── */
+#s7.active .ev-item{animation:fadeUp .5s cubic-bezier(.22,1,.36,1) both}
+#s7.active .ev-item:nth-child(1){animation-delay:.4s}
+#s7.active .ev-item:nth-child(2){animation-delay:.65s}
+#s7.active .ev-item:nth-child(3){animation-delay:.9s}
+#s7.active .ev-item:nth-child(4){animation-delay:1.15s}
+
+/* ── 정가 취소선 → FREE 애니메이션 ── */
+.ev-price-wrap{padding:2px 0}
+.ev-original-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ev-orig-label{font-size:11px;font-weight:700;color:var(--w40);letter-spacing:.08em;flex-shrink:0}
+.ev-orig-num-wrap{position:relative;display:inline-block}
+.ev-orig-num{font-size:20px;font-weight:800;color:var(--w70)}
+.ev-strike{
+  position:absolute;left:0;top:50%;transform:translateY(-50%);
+  height:2.5px;background:#b94a2c;width:0;border-radius:2px;
+}
+#s7.active .ev-strike{
+  animation:strike-draw .7s cubic-bezier(.25,.46,.45,.94) forwards;
+  animation-delay:1.6s;
+}
+@keyframes strike-draw{to{width:100%}}
+
+.ev-free-reveal{display:flex;align-items:center;gap:10px;opacity:0}
+#s7.active .ev-free-reveal{
+  animation:fadeUp .6s cubic-bezier(.22,1,.36,1) both;
+  animation-delay:2.5s;
+}
+.ev-free-pill{
+  background:linear-gradient(90deg,#8B6535 30%,#d4a870 50%,#8B6535 70%);
+  background-size:250% auto;
+  color:var(--bg);font-size:15px;font-weight:900;letter-spacing:.14em;
+  padding:6px 16px;border-radius:999px;flex-shrink:0;
+}
+@keyframes pill-shine{
+  0%,100%{background-position:100% center;box-shadow:0 0 0 0 rgba(139,101,53,0)}
+  40%    {background-position:0% center;box-shadow:0 0 14px rgba(139,101,53,0.45),0 0 0 5px rgba(139,101,53,0.12)}
+  60%    {background-position:-30% center;box-shadow:0 0 0 0 rgba(139,101,53,0)}
+}
+#s7.active .ev-free-pill{
+  animation:pill-shine 2.6s ease-in-out infinite;
+  animation-delay:3.2s;
+}
+.ev-zero-price{font-size:26px;font-weight:900;color:var(--gold)}
+</style>
+</head>
+<body>
+
+<div class="prog"><div class="prog-fill" id="pf"></div></div>
+<div class="tnav">
+  <button class="btn-back hidden" id="btnBack" onclick="back()" aria-label="이전">←</button>
+  <span class="tnav-brand">Shed</span>
+  <span class="tnav-count" id="tc"></span>
+</div>
+
+<!-- ═══ STEP 0 : 향 퀴즈 ═══ -->
+<div class="step active" id="s0">
+  <!-- 헤더 오버레이 -->
+  <div class="quiz-header">
+    <h2 class="quiz-header-title">딱 지금! 느끼고 싶은 향기는?</h2>
+    <p class="quiz-header-sub">길에서 말 걸었던 이유, 여기서 알게 되실 거예요.</p>
+  </div>
+  <!-- 풀스크린 카드 그리드 -->
+  <div class="quiz-grid">
+      <div class="qcard" onclick="pickQuiz(0)">
+        <div class="qcard-bg" style="background-image:url('1.jpg')"></div>
+        <div class="qcard-dim"></div>
+        <div class="qcard-inner">
+          <div class="qemoji">🌿</div>
+          <div class="qlabel">숲속 이른 아침</div>
+          <div class="qhint">TAP →</div>
+        </div>
+      </div>
+      <div class="qcard" onclick="pickQuiz(1)">
+        <div class="qcard-bg" style="background-image:url('2.jpg')"></div>
+        <div class="qcard-dim"></div>
+        <div class="qcard-inner">
+          <div class="qemoji">🍋</div>
+          <div class="qlabel">상큼하고 기분 좋은 오후</div>
+          <div class="qhint">TAP →</div>
+        </div>
+      </div>
+      <div class="qcard" onclick="pickQuiz(2)">
+        <div class="qcard-bg" style="background-image:url('4.jpg')"></div>
+        <div class="qcard-dim"></div>
+        <div class="qcard-inner">
+          <div class="qemoji">🕯️</div>
+          <div class="qlabel">조용한 방, 혼자인 밤</div>
+          <div class="qhint">TAP →</div>
+        </div>
+      </div>
+      <div class="qcard" onclick="pickQuiz(3)">
+        <div class="qcard-bg" style="background-image:url('5.jpg')"></div>
+        <div class="qcard-dim"></div>
+        <div class="qcard-inner">
+          <div class="qemoji">🌸</div>
+          <div class="qlabel">환기된 깨끗한 공간</div>
+          <div class="qhint">TAP →</div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<!-- ═══ STEP 1 : 퀴즈 결과 ═══ -->
+<div class="step step-result" id="s1">
+  <div class="result-bg" id="resBg"></div>
+  <div class="result-dim"></div>
+  <div class="result-content">
+    <p class="result-joke" id="resJoke"></p>
+    <p class="rlabel">오늘부터 해볼 수 있는 리추얼</p>
+    <div class="rlist" id="resList"></div>
+    <button class="btn-next" onclick="go(2)">계속하기 →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 2 : 브랜드 소개 ═══ -->
+<div class="step" id="s2">
+  <div class="s2-bg"><img src="intro.jpg" alt=""></div>
+  <div class="s2-grad"></div>
+  <div class="s2-content">
+    <span class="stag">SHED · 덜어내다, 벗어내다</span>
+    <h2 class="stitle">저희는 사쉐 브랜드<br>Shed예요.</h2>
+    <p class="brand-intro">
+      향으로 하루를 덜어내는 브랜드예요.<br>
+      좋은 향보다, 지금 당신에게 꼭 맞는<br>
+      향 하나를 드리고 싶어요.
+    </p>
+    <p class="brand-bridge">
+      저희가 맞는 향을<br>골라드릴게요!
+    </p>
+    <button class="btn-next" onclick="go(3)">좋아요 →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 3 : 사쉐 소개 ═══ -->
+<div class="step" id="s3">
+  <div class="step-inner">
+    <span class="stag">SACHET</span>
+    <h2 class="stitle">사쉐에 대해<br>얼마나 알고 계세요?</h2>
+    <div class="sopts">
+      <button class="sopt" onclick="pickS(0)">
+        <span class="sopt-icon">😎</span>
+        <div><div class="sopt-title">들어봤어요!</div><div class="sopt-sub">향주머니 같은 거 맞죠?</div></div>
+      </button>
+      <button class="sopt" onclick="pickS(1)">
+        <span class="sopt-icon">🏠</span>
+        <div><div class="sopt-title">집에 있어요!</div><div class="sopt-sub">지금도 쓰고 있는데요?</div></div>
+      </button>
+      <button class="sopt" onclick="pickS(2)">
+        <span class="sopt-icon">🤔</span>
+        <div><div class="sopt-title">사... 뭐요?</div><div class="sopt-sub">처음 들어봐요</div></div>
+      </button>
+    </div>
+    <div class="sreaction" id="sreact"></div>
+    <button id="sachBtn" class="btn-next" style="display:none;margin-top:16px" onclick="go(4)">사쉐 알아보기 →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 4 : 사쉐 설명 ═══ -->
+<div class="step" id="s4">
+  <div class="step-inner">
+    <span class="stag">SACHET</span>
+    <h2 class="stitle">이런 거예요.</h2>
+    <p class="ssub">향을 담은 작은 주머니예요.<br>걸어두기만 하면 공간이 달라져요.</p>
+    <div class="ref-grid">
+      <div class="ref-card">
+        <div class="ref-card-bg" style="background-image:url('reference1.webp')"></div>
+        <div class="ref-card-label">향 주머니</div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-bg" style="background-image:url('reference2.jpg')"></div>
+        <div class="ref-card-label">차 안에</div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-bg" style="background-image:url('reference3.webp')"></div>
+        <div class="ref-card-label">방 어디든</div>
+      </div>
+      <div class="ref-card">
+        <div class="ref-card-bg" style="background-image:url('reference4.jpg')"></div>
+        <div class="ref-card-label">옷장에</div>
+      </div>
+    </div>
+    <button class="btn-next" onclick="go(5)">계속하기 →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 5 : 공감 질문 ═══ -->
+<div class="step" id="s5">
+  <div class="step-inner">
+    <span class="stag">당신의 휴식</span>
+    <h2 class="stitle">보통 뭐 할 때<br>진짜 쉬었다 싶어요?</h2>
+    <p class="ssub">솔직하게 하나만.</p>
+    <div class="eg">
+      <button class="ebtn" onclick="pickE(this,0)">🍺<span>친구랑 술 한 잔</span></button>
+      <button class="ebtn" onclick="pickE(this,1)">🎤<span>노래방 가서 소리지르기</span></button>
+      <button class="ebtn" onclick="pickE(this,2)">🛋️<span>아무것도 안 하고 눕기</span></button>
+      <button class="ebtn" onclick="pickE(this,3)">📱<span>릴스 보다 잠들기</span></button>
+      <button class="ebtn" onclick="pickE(this,4)">🎮<span>게임 켜고 집중하기</span></button>
+      <button class="ebtn" onclick="pickE(this,5)">🚿<span>샤워 오래 하기</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STEP 6 : 공감 리액션 ═══ -->
+<div class="step" id="s6">
+  <div class="step-inner">
+    <div class="re-emoji" id="reEmoji"></div>
+    <p class="re-msg"  id="reMsg"></p>
+    <p class="re-bridge" id="reBridge"></p>
+    <p class="re-hook"  id="reHook"></p>
+    <button class="btn-next" onclick="go(7)">그 향, 받아보실래요? →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 7 : 이벤트 ═══ -->
+<div class="step step-event" id="s7">
+  <div class="step-inner" style="max-width:520px">
+    <span class="ev-badge">선착순 100명 · FREE</span>
+    <h2 class="ev-title">이걸<br>그냥 드려요.</h2>
+    <p class="ev-sub">방금 말씀해주신 그 순간에<br>딱 맞는 향으로 골라드릴게요.<br>써보시고 후기 하나만 남겨주세요.</p>
+    <div class="ev-card">
+      <img class="ev-img" src="intro.jpg" alt="Shed 사쉐 리추얼 세트">
+      <div class="ev-body">
+        <p class="ev-tag">SHED × RITUAL SET</p>
+        <div class="ev-items">
+          <div class="ev-item"><span class="ev-chk">✓</span>커스텀 사쉐 1종 (나에게 맞는 향)</div>
+          <div class="ev-item"><span class="ev-chk">✓</span>리추얼 워크북</div>
+          <div class="ev-item"><span class="ev-chk">✓</span>이미지 엽서</div>
+          <div class="ev-item"><span class="ev-chk">✓</span>기프트 박스 포장</div>
+        </div>
+        <div class="ev-div"></div>
+        <div class="ev-price-wrap">
+          <div class="ev-original-row">
+            <span class="ev-orig-label">정가</span>
+            <div class="ev-orig-num-wrap">
+              <span class="ev-orig-num">34,900원</span>
+              <div class="ev-strike"></div>
+            </div>
+          </div>
+          <div class="ev-free-reveal">
+            <span class="ev-free-pill">FREE</span>
+            <span class="ev-zero-price">= 0원</span>
+          </div>
+        </div>
+        <p class="ev-dl">6월 22일부터 · 선착순 100명 한정</p>
+      </div>
+    </div>
+    <button class="btn-next" onclick="openApplyModal()">나도 받을래요! →</button>
+  </div>
+</div>
+
+<!-- ═══ STEP 8 : 완료 ═══ -->
+<div class="step" id="s8">
+  <div class="done step-inner">
+    <div class="done-emoji">✨</div>
+    <h2 class="done-title">신청됐어요.</h2>
+    <p class="done-sub">선착순 100명 안에 들어가셨길 바라며<br>결과는 개별 연락드릴게요.<br><br>기다리는 동안 인스타 팔로우 해주시면<br>소식 제일 빠르게 받을 수 있어요.</p>
+    <div class="done-scent" id="dscent"></div>
+    <a href="#" class="btn-insta" target="_blank">📷 @shed.official 팔로우하기</a>
+  </div>
+</div>
+
+<!-- ===== 신청 모달 ===== -->
+<div class="apply-backdrop" id="applyBackdrop" role="dialog" aria-modal="true">
+  <div class="apply-modal">
+    <button class="apply-close" id="applyClose" aria-label="닫기">×</button>
+    <div id="applyFormWrap">
+      <div class="apply-kicker">SHED · 덜어내다, 벗어내다</div>
+      <h2 class="apply-title">무료 세트<br><span>신청해요</span></h2>
+      <p class="apply-lede">선착순 100명 한정이에요.<br>빠르게 신청해주세요!</p>
+      <form id="applyForm">
+        <div class="apply-field">
+          <div class="apply-row">
+            <div style="flex:2">
+              <label for="apName">이름</label>
+              <input id="apName" name="name" type="text" placeholder="홍길동" required />
+            </div>
+            <div style="flex:1">
+              <label for="apAge">나이</label>
+              <input id="apAge" name="age" type="text" inputmode="numeric" placeholder="27" required />
+            </div>
+          </div>
+        </div>
+        <div class="apply-field">
+          <label for="apPhone">연락처</label>
+          <input id="apPhone" name="phone" type="tel" inputmode="numeric" placeholder="010-1234-5678" required />
+        </div>
+        <div class="apply-field">
+          <label>어디서 오시나요?</label>
+          <div class="apply-region-wrap">
+<svg viewBox="0 0 360 400" class="apply-region-map" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+  <g class="apply-region-group" data-region="쪼곰 먼 북부">
+    <path d="M 270,79.7 L 272.5,88.8 L 275.5,91.5 L 281.6,93.2 L 289.5,92.8 L 290.5,101.5 L 302.7,104.9 L 305,109 L 305.8,117.6 L 302.3,126 L 298.8,125.7 L 294.3,131 L 288,134.6 L 286.6,139.5 L 288.7,143.2 L 285.8,147.9 L 290.5,156 L 282.9,163.8 L 289.8,166.9 L 293.7,164.4 L 291.7,175.7 L 292.3,182 L 289,186.8 L 293.6,190.7 L 296,194.6 L 294.1,201.5 L 285.5,201.9 L 280.9,205.5 L 276,204.1 L 275.8,196.1 L 269.8,185.6 L 265.7,180.9 L 260.3,184.8 L 254.5,185.5 L 256.1,178.6 L 250.8,170.9 L 251.2,165.7 L 248.6,164.1 L 243.5,154.2 L 232.7,150.7 L 235.3,141.3 L 234.3,138.6 L 237.2,127.2 L 242.2,128.2 L 244.6,126.3 L 245.7,113.6 L 251.3,113.7 L 257.2,107.9 L 255.5,103.2 L 258.3,97.6 L 263.2,93.7 L 264.3,89.2 L 270,79.7 Z"/>
+    <path d="M 200,16.4 L 200.9,23.4 L 200.1,29.5 L 204.3,32 L 208.1,29.4 L 211,32.1 L 211.9,40.7 L 214.6,44.6 L 213.2,55.9 L 217.2,71.4 L 216.1,76.1 L 208.2,77.9 L 206.6,74 L 200.6,79.7 L 207.5,89 L 208,93.9 L 202.2,98.5 L 196.1,96.4 L 196.3,100.6 L 188.4,98.1 L 183,108 L 179.3,112.1 L 171.7,108.3 L 180.4,95.1 L 175.6,92.2 L 170.9,92.2 L 164.2,97.9 L 156,93.8 L 155.5,100.7 L 150.5,100.7 L 147.4,96.8 L 144,98.1 L 143.3,102.3 L 136.5,100.8 L 135.8,95.2 L 141.7,94.9 L 140.4,90 L 142.2,84.2 L 146.8,84.8 L 150.7,88.2 L 154.9,79.6 L 155,73.5 L 149.5,72 L 146.1,68.1 L 134.8,71.5 L 132.5,67.1 L 124.8,59.5 L 129.3,52.4 L 141,41 L 150.8,34.5 L 155.4,39.4 L 161.8,39.6 L 167.3,37.8 L 169.9,41.1 L 173.9,37.4 L 172.1,31.6 L 175.3,30.9 L 182.6,25.5 L 191.9,22 L 200,16.4 Z"/>
+    <path d="M 214.6,44.6 L 216.8,50.9 L 223.7,54.5 L 230.5,50.2 L 233.6,45.3 L 237.4,46.6 L 237,53.1 L 234.6,57 L 236.2,62.5 L 242,62.6 L 244.1,68.1 L 257.1,63 L 266.8,62.8 L 269.7,67.4 L 270,79.7 L 264.3,89.2 L 263.2,93.7 L 258.3,97.6 L 255.5,103.2 L 257.2,107.9 L 251.3,113.7 L 245.7,113.6 L 244.6,126.3 L 242.2,128.2 L 237.2,127.2 L 234.3,138.6 L 235.3,141.3 L 232.7,150.7 L 231.3,153.9 L 224.1,157.8 L 221.5,155.7 L 215.4,154.9 L 213.2,157.5 L 207.8,157.5 L 206.3,155 L 198.9,151 L 202.6,142.4 L 202.6,138.2 L 199.9,129.9 L 204,126.2 L 207.8,125.6 L 209.6,120.5 L 207.6,116.2 L 202.6,115 L 196.3,100.6 L 196.1,96.4 L 202.2,98.5 L 208,93.9 L 207.5,89 L 200.6,79.7 L 206.6,74 L 208.2,77.9 L 216.1,76.1 L 217.2,71.4 L 213.2,55.9 L 214.6,44.6 Z"/>
+    <path d="M 135.8,95.2 L 136.5,100.8 L 143.3,102.3 L 144,98.1 L 147.4,96.8 L 150.5,100.7 L 155.5,100.7 L 156,93.8 L 164.2,97.9 L 170.9,92.2 L 175.6,92.2 L 180.4,95.1 L 171.7,108.3 L 166.1,119.4 L 166.1,128 L 163.6,133.5 L 159.3,134.8 L 157.5,147.4 L 164,152.4 L 162.6,159.1 L 158.2,159.5 L 156.9,164.4 L 152.9,166.7 L 147.3,162.8 L 143,164.5 L 138.6,165.7 L 134.7,163.1 L 130.2,170.7 L 120,170.7 L 113,174.5 L 109.9,171.9 L 111.6,165.1 L 107.9,149.7 L 106.9,148.2 L 109.4,137.5 L 106.5,135.4 L 113,128 L 108.9,122.8 L 110.1,119.9 L 107.6,113.8 L 109.2,104.8 L 112.8,107.8 L 117.8,108.8 L 124.1,105.7 L 123.1,100.3 L 127.9,97 L 131.5,97.6 L 135.8,95.2 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="경기 북부">
+    <path d="M 171.7,108.3 L 179.3,112.1 L 179.4,118.2 L 186.8,121 L 189.8,127.4 L 196.6,126.9 L 199.9,129.9 L 202.6,138.2 L 202.6,142.4 L 198.9,151 L 187.8,155.9 L 181.1,153.9 L 177.7,155.4 L 177.7,161.2 L 179.9,165.2 L 180.5,171.6 L 178.9,175.9 L 175.5,177.3 L 170,173.9 L 165.7,175.8 L 164.7,179.6 L 160.7,179.3 L 161.1,163.5 L 162.6,159.1 L 164,152.4 L 157.5,147.4 L 159.3,134.8 L 163.6,133.5 L 166.1,128 L 166.1,119.4 L 171.7,108.3 Z"/>
+    <path d="M 232.7,150.7 L 243.5,154.2 L 248.6,164.1 L 251.2,165.7 L 250.8,170.9 L 256.1,178.6 L 254.5,185.5 L 250.5,190.8 L 248.3,200.3 L 241.3,214.4 L 241.1,220.1 L 237.1,220.9 L 235.3,217.5 L 226.1,211.5 L 226,209.2 L 218.7,200.5 L 211.5,203.5 L 207.1,192.7 L 208.5,187.8 L 200.4,187 L 196.4,185 L 197,174.7 L 194.2,172.8 L 203.4,164.7 L 204,159.3 L 207.8,157.5 L 213.2,157.5 L 215.4,154.9 L 221.5,155.7 L 224.1,157.8 L 231.3,153.9 L 232.7,150.7 Z"/>
+    <path d="M 200.4,187 L 208.5,187.8 L 207.1,192.7 L 211.5,203.5 L 200.8,208.6 L 198.2,205.1 L 201.8,196.9 L 199.2,192.7 L 200.4,187 Z"/>
+    <path d="M 109.9,171.9 L 113,174.5 L 120,170.7 L 130.2,170.7 L 131,176.8 L 129.3,180.3 L 123.3,184 L 123.3,187.9 L 108.8,178.1 L 109.9,171.9 Z"/>
+    <path d="M 130.2,170.7 L 134.7,163.1 L 138.6,165.7 L 143,164.5 L 147,173.9 L 142.5,176.4 L 134.6,187.6 L 130.2,192.3 L 123.3,187.9 L 123.3,184 L 129.3,180.3 L 131,176.8 L 130.2,170.7 Z"/>
+    <path d="M 143,164.5 L 147.3,162.8 L 152.9,166.7 L 156.9,164.4 L 158.2,159.5 L 162.6,159.1 L 161.1,163.5 L 160.7,179.3 L 164.7,179.6 L 165.7,175.8 L 170,173.9 L 175.5,177.3 L 173,183.7 L 174,188.5 L 172,189.9 L 171.3,189.7 L 167.7,183.6 L 159,186.5 L 156.6,194.8 L 156.8,199.4 L 152.7,200.5 L 147.6,204.8 L 139.8,200.5 L 136.6,197.1 L 130.2,192.3 L 134.6,187.6 L 142.5,176.4 L 147,173.9 L 143,164.5 Z"/>
+    <path d="M 179.3,112.1 L 183,108 L 188.4,98.1 L 196.3,100.6 L 202.6,115 L 207.6,116.2 L 209.6,120.5 L 207.8,125.6 L 204,126.2 L 199.9,129.9 L 196.6,126.9 L 189.8,127.4 L 186.8,121 L 179.4,118.2 L 179.3,112.1 Z"/>
+    <path d="M 198.9,151 L 206.3,155 L 207.8,157.5 L 204,159.3 L 203.4,164.7 L 194.2,172.8 L 187.8,175.3 L 180.5,171.6 L 179.9,165.2 L 177.7,161.2 L 177.7,155.4 L 181.1,153.9 L 187.8,155.9 L 198.9,151 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="경기 동부">
+    <path d="M 241.1,220.1 L 245.1,215.4 L 253,216.5 L 256.5,223.3 L 258,230.5 L 254.8,235.5 L 258.3,243.2 L 260.6,245.1 L 264.1,253.4 L 269.4,254.1 L 269.3,261.6 L 264.8,266.9 L 257.7,272 L 255.5,271.5 L 248,280.1 L 247.7,284.7 L 243.7,283.5 L 235.8,285.2 L 234.9,274.4 L 236.2,265 L 232.4,265.7 L 224.8,261.5 L 220.6,268.8 L 217.1,264.5 L 206.7,267.4 L 205.6,266.5 L 205.1,261.6 L 209.1,260.2 L 213.5,249.2 L 217.6,244.3 L 218,239.1 L 214.9,231.4 L 222.1,229.1 L 226.5,230.9 L 231,227.1 L 229.9,223.6 L 237.1,220.9 L 241.1,220.1 Z"/>
+    <path d="M 211.5,203.5 L 218.7,200.5 L 226,209.2 L 226.1,211.5 L 235.3,217.5 L 237.1,220.9 L 229.9,223.6 L 231,227.1 L 226.5,230.9 L 222.1,229.1 L 214.9,231.4 L 213.8,231.7 L 206.3,231.3 L 210.8,224.3 L 207.3,220 L 211.2,212.6 L 215.1,208.4 L 211.5,203.5 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="쪼곰 먼 동부">
+    <path d="M 293.6,190.7 L 297.8,189.4 L 302.6,184.7 L 307.8,186.9 L 313.2,192.3 L 322.2,198 L 324.6,201.7 L 334.1,200.2 L 336.7,202.6 L 342.2,202 L 346.4,207.4 L 354,210.4 L 352.5,214.2 L 345,215.2 L 338.3,222.8 L 338.4,226.6 L 342.9,234 L 344.1,241.4 L 339,258.2 L 335.3,259.3 L 323.2,257.5 L 324.7,248 L 316.2,247.6 L 311.9,249.4 L 309.5,247.1 L 302.7,245.5 L 289,247.7 L 286,241.5 L 282.9,240.2 L 277,244.5 L 265.2,240.3 L 260.6,245.1 L 258.3,243.2 L 254.8,235.5 L 258,230.5 L 256.5,223.3 L 253,216.5 L 245.1,215.4 L 241.1,220.1 L 241.3,214.4 L 248.3,200.3 L 250.5,190.8 L 254.5,185.5 L 260.3,184.8 L 265.7,180.9 L 269.8,185.6 L 275.8,196.1 L 276,204.1 L 280.9,205.5 L 285.5,201.9 L 294.1,201.5 L 296,194.6 L 293.6,190.7 Z"/>
+    <path d="M 260.6,245.1 L 265.2,240.3 L 277,244.5 L 282.9,240.2 L 286,241.5 L 289,247.7 L 302.7,245.5 L 309.5,247.1 L 311.9,249.4 L 316.2,247.6 L 324.7,248 L 323.2,257.5 L 335.3,259.3 L 335.3,269 L 337.2,274.9 L 334.3,277.5 L 335,288 L 333.1,290.7 L 332.9,298.8 L 330.6,300.6 L 322.1,315.8 L 321.9,318.8 L 314.6,319 L 308.1,315.3 L 301.6,306.3 L 297.2,306 L 293,309.3 L 286.9,310.2 L 284.9,307.2 L 287.8,303.2 L 286.6,292.6 L 289.1,291 L 287.3,283.8 L 290.9,276.6 L 284.1,266.6 L 279.1,265.8 L 275.1,260.8 L 269.3,261.6 L 269.4,254.1 L 264.1,253.4 L 260.6,245.1 Z"/>
+    <path d="M 269.3,261.6 L 275.1,260.8 L 279.1,265.8 L 284.1,266.6 L 290.9,276.6 L 287.3,283.8 L 289.1,291 L 286.6,292.6 L 287.8,303.2 L 284.9,307.2 L 286.9,310.2 L 293,309.3 L 297.2,306 L 301.6,306.3 L 308.1,315.3 L 310,318.7 L 308.6,330.4 L 302.3,333.3 L 295.1,339.2 L 292.3,344.1 L 287.7,341.1 L 279.2,341.9 L 282.3,339.9 L 284.7,332.6 L 281.9,324.7 L 271.4,320.2 L 266.7,316.9 L 263,315 L 263.4,310.3 L 256.8,307.7 L 255.9,304.4 L 249.7,302 L 245.8,297.5 L 247.7,284.7 L 248,280.1 L 255.5,271.5 L 257.7,272 L 264.8,266.9 L 269.3,261.6 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="경기 남부">
+    <path d="M 183,258 L 192,261.8 L 201.5,268.2 L 205.6,266.5 L 206.7,267.4 L 205.8,270.5 L 198.4,271.1 L 195.9,277.4 L 189.8,277.8 L 189.9,274.6 L 185.5,271.3 L 184.2,265.2 L 181.1,263.4 L 183,258 Z"/>
+    <path d="M 195.9,277.4 L 198.4,271.1 L 205.8,270.5 L 214.1,280.9 L 213.6,287.9 L 208.3,292.5 L 208.8,298.3 L 195.7,298.9 L 191.1,292.7 L 194.8,288.3 L 190.8,284.4 L 195.7,280.3 L 195.9,277.4 Z"/>
+    <path d="M 185.9,246.6 L 186.3,249.6 L 183,258 L 181.1,263.4 L 173.3,270 L 169.8,276.2 L 163.3,276.1 L 162.7,275.1 L 166.2,270.7 L 169.3,260.8 L 173.6,250.5 L 180,247 L 185.9,246.6 Z"/>
+    <path d="M 169.3,260.8 L 166.2,270.7 L 162.7,275.1 L 157.9,271.3 L 151.8,271.8 L 155.8,261.7 L 159.4,257.1 L 164.9,256.2 L 169.3,260.8 Z"/>
+    <path d="M 174.9,235.4 L 184.9,235.8 L 187.1,242.6 L 185.9,246.6 L 180,247 L 173.6,250.5 L 169.2,243.9 L 169.5,239.9 L 174.9,235.4 Z"/>
+    <path d="M 166.4,240.4 L 169.5,239.9 L 169.2,243.9 L 173.6,250.5 L 169.3,260.8 L 164.9,256.2 L 162,246.6 L 166.3,244.9 L 166.4,240.4 Z"/>
+    <path d="M 162.4,237.5 L 166.4,240.4 L 166.3,244.9 L 162,246.6 L 164.9,256.2 L 159.4,257.1 L 155.8,261.7 L 152.6,256.9 L 151.6,250.1 L 156.5,240.9 L 162.4,237.5 Z"/>
+    <path d="M 213.5,249.2 L 209.1,260.2 L 205.1,261.6 L 205.6,266.5 L 201.5,268.2 L 192,261.8 L 183,258 L 186.3,249.6 L 194.8,251.4 L 201.8,246.7 L 205.2,246.2 L 213.5,249.2 Z"/>
+    <path d="M 213.8,231.7 L 214.9,231.4 L 218,239.1 L 217.6,244.3 L 213.5,249.2 L 205.2,246.2 L 201.8,246.7 L 201.9,242.2 L 209.7,239 L 213.8,231.7 Z"/>
+    <path d="M 213.8,231.7 L 209.7,239 L 201.9,242.2 L 201.8,246.7 L 194.8,251.4 L 186.3,249.6 L 185.9,246.6 L 187.1,242.6 L 190.9,243.1 L 195.6,238.6 L 197.3,234.5 L 202.7,233.5 L 206.3,231.3 L 213.8,231.7 Z"/>
+    <path d="M 195.9,277.4 L 195.7,280.3 L 190.8,284.4 L 194.8,288.3 L 191.1,292.7 L 185.5,291.8 L 184.9,288.4 L 186.4,283.6 L 184.3,278.7 L 185.5,271.3 L 189.9,274.6 L 189.8,277.8 L 195.9,277.4 Z"/>
+    <path d="M 184.3,278.7 L 186.4,283.6 L 184.9,288.4 L 172.8,280.5 L 179.1,280.7 L 184.3,278.7 Z"/>
+    <path d="M 169.8,276.2 L 172.8,280.5 L 184.9,288.4 L 185.5,291.8 L 181.9,296.7 L 171.6,295.7 L 166.9,288.7 L 162.4,286.5 L 162.1,282.5 L 163.3,276.1 L 169.8,276.2 Z"/>
+    <path d="M 181.1,263.4 L 184.2,265.2 L 185.5,271.3 L 184.3,278.7 L 179.1,280.7 L 172.8,280.5 L 169.8,276.2 L 173.3,270 L 181.1,263.4 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="쪼곰 먼 남부">
+    <path d="M 247.7,284.7 L 245.8,297.5 L 249.7,302 L 255.9,304.4 L 256.8,307.7 L 263.4,310.3 L 263,315 L 266.7,316.9 L 264.8,322.6 L 265.5,329.5 L 260.3,330.7 L 251.8,327.6 L 248.7,328.4 L 245.2,324.4 L 241.9,328.1 L 237.2,321.3 L 229.3,317.6 L 229.5,323.4 L 226.3,323.8 L 220.6,328.3 L 217.9,332.3 L 211.8,333 L 202.8,331.7 L 199.9,322.5 L 202.8,317.8 L 204.8,311.5 L 210.7,308.3 L 208.8,298.3 L 208.3,292.5 L 213.6,287.9 L 214.1,280.9 L 205.8,270.5 L 206.7,267.4 L 217.1,264.5 L 220.6,268.8 L 224.8,261.5 L 232.4,265.7 L 236.2,265 L 234.9,274.4 L 235.8,285.2 L 243.7,283.5 L 247.7,284.7 Z"/>
+    <path d="M 162.1,282.5 L 162.4,286.5 L 166.9,288.7 L 171.6,295.7 L 181.9,296.7 L 185.5,291.8 L 191.1,292.7 L 195.7,298.9 L 208.8,298.3 L 210.7,308.3 L 204.8,311.5 L 202.8,317.8 L 198.8,318 L 196.8,313.9 L 192.6,312.7 L 190.6,303.5 L 182.9,303 L 177.2,309.1 L 183.1,312.9 L 184.6,320 L 178,322.4 L 177,331.4 L 174,336.9 L 167,337.8 L 164.8,339.8 L 156.6,337.3 L 152.8,339.8 L 147.5,349.2 L 143.5,352.1 L 135,352.6 L 133.3,348.1 L 125.4,348 L 124.9,342.9 L 127.5,337.8 L 129.4,328.7 L 127.1,326.7 L 129.1,322.1 L 134.5,321.8 L 136.5,315.9 L 133.6,309.7 L 131,312.5 L 124.5,312.3 L 120.6,319.3 L 112.4,325.2 L 109.2,319.5 L 111.2,316.6 L 106.6,313.2 L 107.8,300.9 L 110.1,297 L 107.4,293.5 L 112,286.7 L 121.9,290 L 126.6,288.7 L 133.4,291.5 L 133.5,285.5 L 137.8,282.1 L 144.8,285.6 L 159.3,279.2 L 162.1,282.5 Z"/>
+    <path d="M 279.2,341.9 L 272.5,344.3 L 272.5,350.3 L 270.2,352.8 L 266.7,355.2 L 259.2,356.3 L 257.3,359.8 L 260.8,364.2 L 256,368.5 L 250,368.2 L 241.6,374.4 L 237.5,383.6 L 233.4,378.5 L 228,377.4 L 223,374 L 219.2,368.3 L 207.2,363.2 L 202.1,363.8 L 205.5,357.5 L 209,356.3 L 207.5,351.3 L 209.1,348 L 199.1,346.3 L 203.7,341.9 L 202.8,331.7 L 211.8,333 L 217.9,332.3 L 220.6,328.3 L 226.3,323.8 L 229.5,323.4 L 229.3,317.6 L 237.2,321.3 L 241.9,328.1 L 245.2,324.4 L 248.7,328.4 L 251.8,327.6 L 260.3,330.7 L 265.5,329.5 L 264.8,322.6 L 266.7,316.9 L 271.4,320.2 L 281.9,324.7 L 284.7,332.6 L 282.3,339.9 L 279.2,341.9 Z"/>
+    <path d="M 198.8,318 L 195.8,321.1 L 185.7,321.8 L 184.6,320 L 183.1,312.9 L 177.2,309.1 L 182.9,303 L 190.6,303.5 L 192.6,312.7 L 196.8,313.9 L 198.8,318 Z"/>
+    <path d="M 198.8,318 L 202.8,317.8 L 199.9,322.5 L 202.8,331.7 L 203.7,341.9 L 199.1,346.3 L 209.1,348 L 207.5,351.3 L 209,356.3 L 205.5,357.5 L 202.1,363.8 L 200.8,362.9 L 192.6,371.9 L 183.8,374.6 L 176.3,372.7 L 158.2,380.7 L 157.3,375.2 L 153.7,372.5 L 149,373.4 L 148.6,369.2 L 145.2,366.4 L 140.9,359.1 L 134,354.4 L 135,352.6 L 143.5,352.1 L 147.5,349.2 L 152.8,339.8 L 156.6,337.3 L 164.8,339.8 L 167,337.8 L 174,336.9 L 177,331.4 L 178,322.4 L 184.6,320 L 185.7,321.8 L 195.8,321.1 L 198.8,318 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="경기 서부">
+    <path d="M 131.1,231.8 L 141,235.1 L 145.2,247.4 L 147.6,250.3 L 151.6,250.1 L 152.6,256.9 L 149.1,260.8 L 144.1,260.2 L 140.5,260.4 L 133.3,266.5 L 127.6,266 L 122.8,269.1 L 119.5,273.4 L 113.2,268 L 115,262.5 L 122.4,251.9 L 125.9,244.7 L 129.2,243.5 L 131.1,237.3 L 131.1,231.8 Z"/>
+    <path d="M 95.6,274.6 L 87.8,282.2 L 93.3,286.8 L 95.8,286.6 L 98.7,293.6 L 104.4,296.5 L 103.7,300.4 L 90.9,297.8 L 87.4,302.1 L 82.4,301.5 L 81.8,296.6 L 85.8,292.1 L 86.3,288.4 L 83.3,282.2 L 87.3,281.8 L 89.6,278 L 95.6,274.6 Z"/>
+    <path d="M 144.1,260.2 L 144.2,275.4 L 139,277.5 L 129.9,279.7 L 120.1,276.3 L 119.5,273.4 L 122.8,269.1 L 127.6,266 L 133.3,266.5 L 140.5,260.4 L 144.1,260.2 Z"/>
+    <path d="M 144.1,260.2 L 149.1,260.8 L 152.6,256.9 L 155.8,261.7 L 151.8,271.8 L 157.9,271.3 L 162.7,275.1 L 163.3,276.1 L 162.1,282.5 L 159.3,279.2 L 144.8,285.6 L 139,277.5 L 144.2,275.4 L 144.1,260.2 Z"/>
+    <path d="M 142.5,230.5 L 145.1,231.2 L 151.2,228.2 L 156.5,240.9 L 151.6,250.1 L 147.6,250.3 L 145.2,247.4 L 141,235.1 L 142.5,230.5 Z"/>
+    <path d="M 128.9,210.2 L 129.6,211.6 L 140.2,213.7 L 140.8,222.2 L 140.4,222.9 L 135.1,222.9 L 127.3,219.7 L 127.3,218.1 L 128.9,210.2 Z"/>
+    <path d="M 139.9,226.9 L 142.5,230.5 L 141,235.1 L 131.1,231.8 L 128.9,231.8 L 123.6,227.4 L 136.3,229 L 139.9,226.9 Z"/>
+    <path d="M 127.3,219.7 L 135.1,222.9 L 140.4,222.9 L 139.9,226.9 L 136.3,229 L 123.6,227.4 L 124.2,220.7 L 127.3,219.7 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="인천">
+    <path d="M 109.9,171.9 L 108.8,178.1 L 123.3,187.9 L 130.2,192.3 L 136.6,197.1 L 134.3,203 L 123.9,199.9 L 120,200.2 L 114.5,193.6 L 105.9,188.2 L 101.5,190.8 L 99.7,196.3 L 95.8,197.1 L 88.3,201.4 L 84.4,195.7 L 83.5,191 L 79.2,184.2 L 77.9,178 L 78.8,171.1 L 77,168.5 L 78.6,161.9 L 76.2,154.3 L 84.6,153.8 L 87.1,157.2 L 95.9,158 L 102.1,151.3 L 107.9,149.7 L 111.6,165.1 L 109.9,171.9 Z"/>
+    <path d="M 17.6,183.3 L 21.9,183.9 L 20.3,190 L 16,185.3 L 17.6,183.3 Z"/>
+    <path d="M 9.7,174.8 L 13.1,180.5 L 11.7,183.4 L 6,179.9 L 9.7,174.8 Z"/>
+    <path d="M 37.5,158.8 L 35.8,167.6 L 41.2,172.1 L 46.5,173.1 L 47.5,180.3 L 40.4,186.7 L 35.1,176.7 L 25.3,169.7 L 28.4,167.2 L 29.2,160.3 L 37.5,158.8 Z"/>
+    <path d="M 24.4,141.5 L 30.1,144.5 L 38.9,145.9 L 35,152.3 L 29.9,155 L 25.6,153.5 L 20.7,154.7 L 16.3,158 L 12.2,153.9 L 18.4,141.3 L 24.4,141.5 Z"/>
+    <path d="M 78.6,161.9 L 77,168.5 L 78.8,171.1 L 77.9,178 L 79.2,184.2 L 79.5,188 L 83,196.9 L 69.1,202.5 L 67.6,198.8 L 59.8,200.1 L 53.1,199.7 L 47.7,195.6 L 46.5,189.5 L 53.4,184.8 L 49.6,174.4 L 42.4,170.4 L 40.5,166.5 L 40.2,159.2 L 42.9,156.5 L 41.7,147.7 L 51.1,138.9 L 60,137.4 L 65.8,144.3 L 74.8,150 L 78.6,161.9 Z"/>
+    <path d="M 120,200.2 L 118.2,203.6 L 113.2,203 L 117.1,210.6 L 111.6,215 L 112.8,218.2 L 113.2,224 L 111.5,231.4 L 108.6,230.5 L 102.5,225.6 L 94.9,225.2 L 95.2,210.2 L 92.6,208.8 L 88.3,201.4 L 95.8,197.1 L 99.7,196.3 L 101.5,190.8 L 105.9,188.2 L 114.5,193.6 L 120,200.2 Z"/>
+    <path d="M 134.3,203 L 128.9,210.2 L 127.3,218.1 L 112.8,218.2 L 111.6,215 L 117.1,210.6 L 113.2,203 L 118.2,203.6 L 120,200.2 L 123.9,199.9 L 134.3,203 Z"/>
+    <path d="M 112.8,218.2 L 127.3,218.1 L 127.3,219.7 L 124.2,220.7 L 123.6,227.4 L 128.9,231.8 L 125.8,233.6 L 117,230 L 111.9,231.8 L 111.5,231.4 L 113.2,224 L 112.8,218.2 Z"/>
+    <path d="M 131.1,231.8 L 131.1,237.3 L 129.2,243.5 L 125.9,244.7 L 122.4,251.9 L 118.5,255.6 L 109.5,253.5 L 115.6,244.1 L 115.3,240.5 L 114.2,234.6 L 111.9,231.8 L 117,230 L 125.8,233.6 L 128.9,231.8 L 131.1,231.8 Z"/>
+    <path d="M 115.3,240.5 L 115.6,244.1 L 109.5,253.5 L 118.5,255.6 L 106.7,265.6 L 97.6,265.7 L 96.4,257.6 L 93.6,254.7 L 93.6,243.2 L 96.2,242.8 L 101.2,242.5 L 106.5,241.3 L 109.7,242.7 L 115.3,240.5 Z"/>
+    <path d="M 108.6,230.5 L 111.5,231.4 L 111.9,231.8 L 114.2,234.6 L 115.3,240.5 L 109.7,242.7 L 106.5,241.3 L 101.2,242.5 L 100.1,236.8 L 102.9,232.7 L 105.4,228.6 L 108.6,230.5 Z"/>
+    <path d="M 108.6,230.5 L 105.4,228.6 L 102.9,232.7 L 97.5,228.7 L 102.5,225.6 L 108.6,230.5 Z"/>
+    <path d="M 54.8,247.7 L 60.9,254.4 L 59.6,258.4 L 55.1,259.5 L 52.2,250.4 L 54.8,247.7 Z"/>
+    <path d="M 97.5,228.7 L 102.9,232.7 L 100.1,236.8 L 101.2,242.5 L 96.2,242.8 L 92.5,239.8 L 94.1,229.3 L 97.5,228.7 Z"/>
+    <path d="M 89.5,224.1 L 87.1,229.6 L 82,230.2 L 74.7,233.4 L 72.4,238 L 61.1,245.2 L 56.4,245 L 51.4,238.6 L 46.5,238.2 L 43.1,233 L 46.8,231.7 L 59,223.4 L 65.8,224.5 L 69.6,223.3 L 72.8,216 L 86.8,220.6 L 89.5,224.1 Z"/>
+  </g>
+  <g class="apply-region-group" data-region="서울">
+    <path d="M 200.8,208.6 L 211.5,203.5 L 215.1,208.4 L 211.2,212.6 L 207.3,220 L 202,217 L 200,213 L 200.8,208.6 Z"/>
+    <path d="M 191.2,217.8 L 197.8,217.1 L 200,213 L 202,217 L 207.3,220 L 210.8,224.3 L 206.3,231.3 L 202.7,233.5 L 199.9,227.4 L 191.7,223.1 L 191.2,217.8 Z"/>
+    <path d="M 189,216.8 L 191.2,217.8 L 191.7,223.1 L 199.9,227.4 L 202.7,233.5 L 197.3,234.5 L 194.8,230.8 L 188.4,232.6 L 184.3,228.5 L 179.7,217.1 L 181.6,215.2 L 189,216.8 Z"/>
+    <path d="M 179.7,217.1 L 184.3,228.5 L 188.4,232.6 L 194.8,230.8 L 197.3,234.5 L 195.6,238.6 L 190.9,243.1 L 187.1,242.6 L 184.9,235.8 L 174.9,235.4 L 173.4,230.5 L 173.1,221.2 L 179.7,217.1 Z"/>
+    <path d="M 173.4,230.5 L 174.9,235.4 L 169.5,239.9 L 166.4,240.4 L 162.4,237.5 L 159.5,235.5 L 156.3,229.6 L 157.1,228.4 L 166.2,226 L 171.1,230.9 L 173.4,230.5 Z"/>
+    <path d="M 173.1,221.2 L 173.4,230.5 L 171.1,230.9 L 166.2,226 L 157.1,228.4 L 160.5,225 L 161.8,220.2 L 166.9,219.1 L 173.1,221.2 Z"/>
+    <path d="M 154.3,211.2 L 165.5,216.7 L 166.9,219.1 L 161.8,220.2 L 160.5,225 L 157.1,228.4 L 155.1,222.4 L 152.1,220 L 153.5,213 L 154.3,211.2 Z"/>
+    <path d="M 156.3,229.6 L 159.5,235.5 L 162.4,237.5 L 156.5,240.9 L 151.2,228.2 L 156.3,229.6 Z"/>
+    <path d="M 140.8,222.2 L 152.1,220 L 155.1,222.4 L 157.1,228.4 L 156.3,229.6 L 151.2,228.2 L 145.1,231.2 L 142.5,230.5 L 139.9,226.9 L 140.4,222.9 L 140.8,222.2 Z"/>
+    <path d="M 134.3,203 L 136.6,197.1 L 139.8,200.5 L 147.6,204.8 L 154.3,211.2 L 153.5,213 L 149,210.9 L 148.9,216.6 L 144,217.4 L 140.2,213.7 L 129.6,211.6 L 128.9,210.2 L 134.3,203 Z"/>
+    <path d="M 140.2,213.7 L 144,217.4 L 148.9,216.6 L 149,210.9 L 153.5,213 L 152.1,220 L 140.8,222.2 L 140.2,213.7 Z"/>
+    <path d="M 157.1,204.2 L 164.1,209.9 L 169.2,208.9 L 169.4,210.9 L 165.5,216.7 L 154.3,211.2 L 147.6,204.8 L 152.7,200.5 L 157.1,204.2 Z"/>
+    <path d="M 166.9,196.1 L 167.6,203.7 L 170.3,207.1 L 169.2,208.9 L 164.1,209.9 L 157.1,204.2 L 166.9,196.1 Z"/>
+    <path d="M 171.3,189.7 L 167.3,191.6 L 166.9,196.1 L 157.1,204.2 L 152.7,200.5 L 156.8,199.4 L 156.6,194.8 L 159,186.5 L 167.7,183.6 L 171.3,189.7 Z"/>
+    <path d="M 194.2,172.8 L 197,174.7 L 196.4,185 L 200.4,187 L 199.2,192.7 L 192.1,194 L 187.6,191.7 L 185.9,189.9 L 188.9,186.1 L 187.8,175.3 L 194.2,172.8 Z"/>
+    <path d="M 187.8,175.3 L 188.9,186.1 L 185.9,189.9 L 179.8,184.4 L 181.1,179.8 L 178.9,175.9 L 180.5,171.6 L 187.8,175.3 Z"/>
+    <path d="M 175.5,177.3 L 178.9,175.9 L 181.1,179.8 L 179.8,184.4 L 185.9,189.9 L 187.6,191.7 L 184.9,194.9 L 179.4,193.8 L 174,188.5 L 173,183.7 L 175.5,177.3 Z"/>
+    <path d="M 172,189.9 L 174,188.5 L 179.4,193.8 L 184.9,194.9 L 187.6,191.7 L 192.1,194 L 192.1,196.4 L 185.7,199.4 L 182,203.9 L 175.4,200.4 L 174.5,194.3 L 172,189.9 Z"/>
+    <path d="M 192.1,194 L 199.2,192.7 L 201.8,196.9 L 198.2,205.1 L 193.6,205.5 L 192.1,196.4 L 192.1,194 Z"/>
+    <path d="M 182,203.9 L 185.7,199.4 L 192.1,196.4 L 193.6,205.5 L 192.2,208.6 L 187.2,205.9 L 182.1,205.6 L 182,203.9 Z"/>
+    <path d="M 193.6,205.5 L 198.2,205.1 L 200.8,208.6 L 200,213 L 197.8,217.1 L 191.2,217.8 L 189,216.8 L 192.2,208.6 L 193.6,205.5 Z"/>
+    <path d="M 182.1,205.6 L 187.2,205.9 L 192.2,208.6 L 189,216.8 L 181.6,215.2 L 179,212.9 L 182.1,205.6 Z"/>
+    <path d="M 179,212.9 L 181.6,215.2 L 179.7,217.1 L 173.1,221.2 L 166.9,219.1 L 165.5,216.7 L 169.4,210.9 L 174.2,210.3 L 179,212.9 Z"/>
+    <path d="M 182.1,205.6 L 179,212.9 L 174.2,210.3 L 169.4,210.9 L 169.2,208.9 L 170.3,207.1 L 182.1,205.6 Z"/>
+    <path d="M 171.3,189.7 L 172,189.9 L 174.5,194.3 L 175.4,200.4 L 182,203.9 L 182.1,205.6 L 170.3,207.1 L 167.6,203.7 L 166.9,196.1 L 167.3,191.6 L 171.3,189.7 Z"/>
+  </g>
+  <g class="apply-region-labels">
+    <text data-region="쪼곰 먼 북부" x="206" y="111" text-anchor="middle" dy="0.35em">쪼곰 먼 북부</text>
+    <text data-region="경기 북부" x="182" y="160" text-anchor="middle" dy="0.35em">경기 북부</text>
+    <text data-region="경기 동부" x="232" y="242" text-anchor="middle" dy="0.35em">경기 동부</text>
+    <text data-region="쪼곰 먼 동부" x="312" y="225" text-anchor="middle" dy="0.35em">쪼곰 먼 동부</text>
+    <text data-region="경기 남부" x="200" y="280" text-anchor="middle" dy="0.35em">경기 남부</text>
+    <text data-region="쪼곰 먼 남부" x="155" y="335" text-anchor="middle" dy="0.35em">쪼곰 먼 남부</text>
+    <text data-region="경기 서부" x="123" y="256" text-anchor="middle" dy="0.35em">경기 서부</text>
+    <text data-region="인천" x="71" y="202" text-anchor="middle" dy="0.35em">인천</text>
+    <text data-region="서울" x="172" y="207" text-anchor="middle" dy="0.35em">서울</text>
+  </g>
+</svg>
+            <div class="apply-region-other-wrap">
+              <button type="button" class="apply-region-other-btn" data-region="그 외 지역">그 외 지역에서 왔어요</button>
+            </div>
+            <input type="hidden" id="apRegion" name="region" />
+            <div id="apRegionError" class="apply-region-error" hidden>지역을 선택해주세요</div>
+          </div>
+        </div>
+        <div class="apply-field">
+          <label>지금 원하는 휴식은?</label>
+          <div class="modal-chips">
+            <button type="button" class="modal-chip" onclick="selModalChip(this)">🛋️ 아무것도 안 하고<br>그냥 눕기</button>
+            <button type="button" class="modal-chip" onclick="selModalChip(this)">🍕 배달시켜서<br>혼자 먹기</button>
+            <button type="button" class="modal-chip" onclick="selModalChip(this)">🚿 샤워 / 목욕<br>오래 하기</button>
+            <button type="button" class="modal-chip" onclick="selModalChip(this)">📺 드라마 · 영화<br>몰아보기</button>
+          </div>
+        </div>
+        <button class="apply-submit" type="submit" id="applySubmit">신청하기</button>
+        <p class="apply-form-note">※ 신청해주신 정보로 확인 연락드릴게요</p>
+      </form>
+    </div>
+    <div class="apply-success" id="applySuccess">
+      <div class="s-emoji">🌿</div>
+      <div class="s-title"><span>신청 완료!</span></div>
+      <div class="s-desc">소중한 신청 감사해요.<br>곧 연락드릴게요!</div>
+      <button class="s-ok" id="applyOk">확인</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ── DATA ── */
+const QUIZ = [
+  { img:'1.jpg',
+    joke:'도시에 살면서 숲 생각하는 거,\n탈출 본능 맞죠? 🌿',
+    r:['창문 열고 바람 3번 들이마시기','따뜻한 음료 하나 챙기기','사쉐 향 맡으며 어깨 내려놓기'],
+    scent:'Green Breeze' },
+  { img:'2.jpg',
+    joke:'레몬 향 맡으면 기분 좋아지는 거,\n그냥 기분 탓 아니에요 🍋',
+    r:['창문 열고 햇빛 2분 받기','차갑고 상큼한 음료 한 잔','사쉐 향으로 공간 리프레시'],
+    scent:'Orange Blossom' },
+  { img:'4.jpg',
+    joke:'그냥 아무도 없이 혼자 있고 싶은 거,\n솔직해서 좋은데요 🕯️',
+    r:['폰 뒤집어두기 10분','좋아하는 자세로 그냥 있기','사쉐 향 맡으며 오늘 내려놓기'],
+    scent:'Woody Floral' },
+  { img:'5.jpg',
+    joke:'청소하고 환기시키면 삶이 리셋되는 느낌,\n그 중독 완전 이해해요 🌸',
+    r:['주변 물건 3가지 제자리에 놓기','창문 열어두기','향으로 공간 마무리하기'],
+    scent:'Orange Blossom' },
+];
+
+const EMP = [
+  { e:'🍺', msg:'근데 날 잡는 게\n더 스트레스잖아요.',
+    b:'맞아요. 친구 스케줄 맞추는 게 일이에요.',
+    h:'혼자서도, 매일, 되는 루틴이 필요한 분이시군요.\n사쉐가 그 역할을 해드릴 수 있어요!' },
+  { e:'🎤', msg:'소리 질러도\n내일 되면 또 쌓여요.',
+    b:'일시적인 해소는 있는데, 근본이 안 바뀌잖아요.',
+    h:'매일 조금씩 덜어내는 게 필요한 분이시군요.\n사쉐로 그 루틴을 만들어봐요!' },
+  { e:'🛋️', msg:'몸은 누워있는데\n머릿속은 계속 돌아가죠.',
+    b:'진짜 쉬는 건 아무것도 안 하는 게 아니에요.',
+    h:'감각을 비워내는 신호가 필요한 분이시군요.\n사쉐 향이 그 스위치가 될 수 있어요!' },
+  { e:'📱', msg:'3시간 보고 일어나면\n더 피곤하죠.',
+    b:'자극이랑 휴식은 완전 달라요.',
+    h:'진짜 off가 필요한 분이시군요.\n사쉐로 디지털 끄는 시간 만들어봐요!' },
+  { e:'🎮', msg:'집중하다 보면 시간 가는 건데,\n끝나고 나면 또 지쳐있죠.',
+    b:'뇌를 쓰는 거랑 뇌를 쉬게 하는 건 달라요.',
+    h:'머리 비우는 시간이 따로 필요한 분이시군요.\n사쉐 향이 그 경계선이 돼드려요!' },
+  { e:'🚿', msg:'샤워할 때 생각 제일 많이 하는 사람\n이 분이에요.',
+    b:'그래도 몸 씻고 나오면 좀 개운하잖아요.',
+    h:'루틴 안에 의미를 넣고 싶은 분이시군요.\n샤워 후 사쉐 한 번 맡아보세요!' },
+];
+
+const SACHET = [
+  '오 이미 감이 있으시네요 😎  Shed 거는 어떻게 다른지 한 번 비교해봐요.',
+  '진짜요?! 그럼 Shed 거랑 꼭 비교해봐야겠네요 👀',
+  '모르는 게 당연해요! 옷장이나 방에 걸어두면 그 공간을 향으로 가득 채워주는 소품이에요. 인테리어 소품처럼요 🌿',
+];
+
+/* ── ENGINE ── */
+const hist = [0];
+const steps = [...document.querySelectorAll('.step')];
+const LAST = steps.length - 1;
+let quizIdx = 0;
+
+function go(n) {
+  const cur = hist[hist.length - 1];
+  if (cur === n) return;
+  steps[cur].classList.remove('active');
+  steps[cur].classList.add('past');
+  steps[n].classList.add('active');
+  hist.push(n);
+  ui();
+}
+
+function back() {
+  if (hist.length <= 1) return;
+  const cur = hist.pop();
+  const prev = hist[hist.length - 1];
+  steps[cur].classList.remove('active');
+  steps[prev].classList.remove('past');
+  steps[prev].classList.add('active');
+  // reset sachet if returning to step 4
+  if (prev === 3) resetSachet();
+  ui();
+}
+
+function ui() {
+  const cur = hist[hist.length - 1];
+  document.getElementById('pf').style.width = (cur / LAST * 100) + '%';
+  const bb = document.getElementById('btnBack');
+  (hist.length <= 1 || cur === LAST) ? bb.classList.add('hidden') : bb.classList.remove('hidden');
+  const tc = document.getElementById('tc');
+  tc.textContent = (cur === 0 || cur === LAST) ? '' : cur + ' / ' + LAST;
+}
+
+/* ── QUIZ ── */
+function pickQuiz(i) {
+  quizIdx = i;
+  const d = QUIZ[i];
+  document.getElementById('resBg').style.backgroundImage = `url('${d.img}')`;
+  document.getElementById('resJoke').textContent = d.joke;
+  document.getElementById('resList').innerHTML =
+    d.r.map((t, n) => `<div class="ritem"><span class="rnum">${n+1}</span>${t}</div>`).join('');
+  go(1);
+}
+
+/* ── EMPATHY ── */
+function pickE(el, i) {
+  document.querySelectorAll('.ebtn').forEach(b => { b.classList.remove('sel','popping'); b.classList.add('dim'); });
+  el.classList.remove('dim'); el.classList.add('sel');
+  void el.offsetWidth;
+  el.classList.add('popping');
+  el.addEventListener('animationend', () => el.classList.remove('popping'), { once:true });
+  const d = EMP[i];
+  document.getElementById('reEmoji').textContent  = d.e;
+  document.getElementById('reMsg').textContent    = d.msg;
+  document.getElementById('reBridge').textContent = d.b;
+  document.getElementById('reHook').textContent   = d.h;
+  setTimeout(() => go(6), 420);
+}
+
+/* ── SACHET ── */
+function pickS(i) {
+  document.getElementById('sreact').textContent = SACHET[i];
+  document.getElementById('sreact').classList.add('show');
+  document.querySelectorAll('.sopt').forEach((b, j) => {
+    b.style.opacity = j === i ? '1' : '0.35';
+    b.style.pointerEvents = 'none';
+  });
+  document.getElementById('sachBtn').style.display = '';
+}
+function resetSachet() {
+  document.querySelectorAll('.sopt').forEach(b => { b.style.opacity = ''; b.style.pointerEvents = ''; });
+  document.getElementById('sreact').classList.remove('show');
+  document.getElementById('sachBtn').style.display = 'none';
+}
+
+/* ── MODAL ── */
+function openApplyModal() {
+  document.getElementById('applyFormWrap').style.display = '';
+  document.getElementById('applySuccess').classList.remove('show');
+  requestAnimationFrame(() => document.getElementById('applyBackdrop').classList.add('open'));
+  document.body.style.overflow = 'hidden';
+}
+function closeApplyModal() {
+  document.getElementById('applyBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.getElementById('applyClose').addEventListener('click', closeApplyModal);
+document.getElementById('applyOk').addEventListener('click', () => {
+  closeApplyModal();
+  go(8);
+  setTimeout(fanfare, 350);
+});
+document.getElementById('applyBackdrop').addEventListener('click', e => {
+  if (e.target === document.getElementById('applyBackdrop')) closeApplyModal();
+});
+
+/* ── 지역 선택 ── */
+const apRegionInput = document.getElementById('apRegion');
+const apRegionError = document.getElementById('apRegionError');
+const apRegionGroups = document.querySelectorAll('.apply-region-group');
+const apRegionOther = document.querySelector('.apply-region-other-btn');
+const apRegionLabels = document.querySelectorAll('.apply-region-labels text');
+function selectApRegion(name, source) {
+  apRegionGroups.forEach(g => g.classList.remove('selected'));
+  if (apRegionOther) apRegionOther.classList.remove('selected');
+  if (source) source.classList.add('selected');
+  apRegionLabels.forEach(t => t.classList.toggle('selected', t.dataset.region === name));
+  apRegionInput.value = name;
+  if (apRegionError) apRegionError.hidden = true;
+}
+apRegionGroups.forEach(g => g.addEventListener('click', () => selectApRegion(g.dataset.region, g)));
+if (apRegionOther) apRegionOther.addEventListener('click', () => selectApRegion(apRegionOther.dataset.region, apRegionOther));
+
+/* ── 전화번호 하이픈 ── */
+document.getElementById('apPhone').addEventListener('input', e => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 7) v = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+  else if (v.length > 3) v = v.slice(0,3) + '-' + v.slice(3);
+  e.target.value = v;
+});
+
+/* ── 모달 칩 ── */
+function selModalChip(el) {
+  document.querySelectorAll('.modal-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+/* ── SUBMIT ── */
+const SHED_SCRIPT = 'https://script.google.com/macros/s/AKfycbw_WDFrpd-kFDlkg2QsKOarSduLloa6RYKMWqdiIHGOO8GJUS_YxZR4A81ysQrw4m5C/exec';
+document.getElementById('applyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = document.getElementById('apName').value.trim();
+  const phone = document.getElementById('apPhone').value.trim();
+  const age = document.getElementById('apAge').value.trim();
+  const region = apRegionInput.value;
+  const chip = document.querySelector('.modal-chip.sel');
+  if (!name || !phone || !age) { alert('이름, 연락처, 나이를 입력해주세요.'); return; }
+  if (!region) { apRegionError.hidden = false; return; }
+  if (!chip) { alert('원하는 휴식 유형을 선택해주세요.'); return; }
+  const btn = document.getElementById('applySubmit');
+  btn.disabled = true; btn.textContent = '신청중...';
+  const payload = { name, phone, age, region, rest: chip.textContent.replace(/\n/g,' '), scent: QUIZ[quizIdx].scent };
+  try {
+    await fetch(SHED_SCRIPT, { method:'POST', body: JSON.stringify(payload) });
+  } catch(_) {}
+  document.getElementById('applyFormWrap').style.display = 'none';
+  document.getElementById('applySuccess').classList.add('show');
+  document.getElementById('dscent').textContent = '추천 향 · ' + QUIZ[quizIdx].scent;
+  btn.disabled = false; btn.textContent = '신청하기';
+});
+
+/* ── FANFARE ── */
+function fanfare() {
+  // 웹오디오 팡파레 사운드
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const kick = ctx.createOscillator(), kg = ctx.createGain();
+    kick.connect(kg); kg.connect(ctx.destination);
+    kick.type = 'sine';
+    kick.frequency.setValueAtTime(200, ctx.currentTime);
+    kick.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
+    kg.gain.setValueAtTime(0.55, ctx.currentTime);
+    kg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    kick.start(); kick.stop(ctx.currentTime + 0.25);
+    [[262,0.03],[330,0.10],[392,0.17],[494,0.24],[587,0.31]].forEach(([f,t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'square'; o.frequency.value = f;
+      const s = ctx.currentTime + t;
+      g.gain.setValueAtTime(0.12, s);
+      g.gain.exponentialRampToValueAtTime(0.001, s + 0.16);
+      o.start(s); o.stop(s + 0.18);
+    });
+    [523, 659, 784, 1047].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'triangle'; o.frequency.value = f;
+      const s = ctx.currentTime + 0.38;
+      g.gain.setValueAtTime(0.22 - i * 0.03, s);
+      g.gain.exponentialRampToValueAtTime(0.001, s + 0.85);
+      o.start(s); o.stop(s + 0.9);
+    });
+  } catch(e) {}
+
+  // 콘페티 3파
+  if (typeof confetti === 'function') {
+    const colors = ['#F5C060','#FF6B8A','#7CB8FF','#5FD068','#FF8C42','#E584F7','#FF4455','#fff','#FFF176'];
+    const Z = 9999;
+    confetti({ particleCount:130, spread:80,  origin:{y:0.6},            colors, zIndex:Z });
+    confetti({ particleCount:80,  angle:60,   spread:60, origin:{x:0,   y:0.65}, colors, zIndex:Z });
+    confetti({ particleCount:80,  angle:120,  spread:60, origin:{x:1,   y:0.65}, colors, zIndex:Z });
+    setTimeout(() => {
+      confetti({ particleCount:70, angle:70,  spread:55, origin:{x:0,   y:0.4},  colors, zIndex:Z });
+      confetti({ particleCount:70, angle:110, spread:55, origin:{x:1,   y:0.4},  colors, zIndex:Z });
+      confetti({ particleCount:50, angle:90,  spread:55, origin:{x:0.3, y:0},    colors, zIndex:Z });
+      confetti({ particleCount:50, angle:90,  spread:55, origin:{x:0.7, y:0},    colors, zIndex:Z });
+    }, 250);
+    setTimeout(() => {
+      confetti({ particleCount:60, spread:120, startVelocity:20, origin:{y:0.5}, colors, zIndex:Z });
+    }, 600);
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') back(); });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+</body>
+</html>
