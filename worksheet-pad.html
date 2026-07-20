@@ -722,11 +722,12 @@
 
   .topbar {
     position: fixed; left: 0; right: 0; top: 0;
-    background: rgba(247,238,229,0.94); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: rgba(247,238,229,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--linemid);
     padding: env(safe-area-inset-top) 16px 0;
     height: calc(52px + env(safe-area-inset-top));
     display: flex; align-items: center; justify-content: center; z-index: 40;
+    -webkit-transform: translateZ(0); transform: translateZ(0);
   }
   .topbar-brand {
     font-size: 1rem; font-weight: 900; letter-spacing: 0.08em; color: var(--gold);
@@ -1480,6 +1481,9 @@ try {
   }
 
   function renderPretestProfile(wins, name) {
+    document.getElementById('pretestEntry').hidden = true;
+    document.getElementById('pretestResult').hidden = false;
+
     const titleEl = document.getElementById('pretestResultTitle');
     if (titleEl) titleEl.textContent = name ? `${name}님의 사전진단(TA) 결과에요` : '고객님의 사전진단(TA) 결과에요';
 
@@ -1898,9 +1902,6 @@ try {
       }
     }
 
-    document.getElementById('pretestEntry').hidden = true;
-    const resultBox = document.getElementById('pretestResult');
-    resultBox.hidden = false;
   }
 
   const codeInput = document.getElementById('pretestCodeInput');
@@ -1920,7 +1921,7 @@ try {
   const urlParams = new URLSearchParams(location.search);
   const paramWins = decodePretestCode(urlParams.get('p'));
   if (paramWins) renderPretestProfile(paramWins, urlParams.get('n'));
-} catch (e) { /* 파라미터/코드가 없거나 잘못돼도 기존 화면은 그대로 작동 */ }
+} catch (e) { console.error('[pretest]', e); }
 
 /* ── The Shift 편집 상태 ── */
 
