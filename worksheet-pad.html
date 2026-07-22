@@ -722,12 +722,16 @@
 
   .topbar {
     position: fixed; left: 0; right: 0; top: 0;
-    background: rgba(247,238,229,0.97); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: #F7EEE5;
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--linemid);
     padding: env(safe-area-inset-top) 16px 0;
     height: calc(52px + env(safe-area-inset-top));
     display: flex; align-items: center; justify-content: center; z-index: 40;
-    -webkit-transform: translateZ(0); transform: translateZ(0);
+    will-change: transform;
+  }
+  @supports (-webkit-backdrop-filter: blur(1px)) {
+    .topbar { background: rgba(247,238,229,0.88); }
   }
   .topbar-brand {
     font-size: 1rem; font-weight: 900; letter-spacing: 0.08em; color: var(--gold);
@@ -1919,8 +1923,21 @@ try {
   codeInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLoadCode(); });
 
   const urlParams = new URLSearchParams(location.search);
-  const paramWins = decodePretestCode(urlParams.get('p'));
-  if (paramWins) renderPretestProfile(paramWins, urlParams.get('n'));
+  const paramP = urlParams.get('p');
+  const paramN = urlParams.get('n');
+
+  /* 진단용: 파라미터 상태를 힌트 텍스트로 표시 */
+  const hintEl = document.querySelector('.pretest-entry-hint');
+  if (hintEl) {
+    if (paramP) {
+      hintEl.textContent = `코드 감지됨: ${paramP} — 불러오는 중…`;
+    } else {
+      hintEl.textContent = `URL에 코드 없음 (${location.pathname}${location.search || '?없음'})`;
+    }
+  }
+
+  const paramWins = decodePretestCode(paramP);
+  if (paramWins) renderPretestProfile(paramWins, paramN);
 } catch (e) { console.error('[pretest]', e); }
 
 /* ── The Shift 편집 상태 ── */
