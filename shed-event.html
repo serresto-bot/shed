@@ -707,6 +707,12 @@ input{font-family:inherit}
   </div>
 </div>
 
+<!-- ═══ STEP 2b : SHED 쇼핑 ═══ -->
+<div class="step" id="s2b" style="padding:0;justify-content:flex-start;background:#0e0b08">
+  <iframe src="/shop" style="width:100%;flex:1;border:none;min-height:0"></iframe>
+  <button class="btn-next" onclick="go(4)" style="flex-shrink:0;margin:16px 24px;width:calc(100% - 48px)">넘어가기 →</button>
+</div>
+
 <!-- ═══ STEP 3 : 사쉐 소개 ═══ -->
 <div class="step" id="s3">
   <div class="step-inner">
@@ -727,7 +733,7 @@ input{font-family:inherit}
       </button>
     </div>
     <div class="sreaction" id="sreact"></div>
-    <button id="sachBtn" class="btn-next" style="display:none;margin-top:16px" onclick="go(4)">사쉐 알아보기 →</button>
+    <button id="sachBtn" class="btn-next" style="display:none;margin-top:16px" onclick="go(5)">사쉐 알아보기 →</button>
   </div>
 </div>
 
@@ -755,7 +761,7 @@ input{font-family:inherit}
         <div class="ref-card-label">옷장에</div>
       </div>
     </div>
-    <button class="btn-next" onclick="go(5)">계속하기 →</button>
+    <button class="btn-next" onclick="go(6)">계속하기 →</button>
   </div>
 </div>
 
@@ -783,7 +789,7 @@ input{font-family:inherit}
     <p class="re-msg"  id="reMsg"></p>
     <p class="re-bridge" id="reBridge"></p>
     <p class="re-hook"  id="reHook"></p>
-    <button class="btn-next" onclick="go(7)">그 향, 받아보실래요? →</button>
+    <button class="btn-next" onclick="go(8)">그 향, 받아보실래요? →</button>
   </div>
 </div>
 
@@ -1111,7 +1117,7 @@ function back() {
   steps[prev].classList.remove('past');
   steps[prev].classList.add('active');
   // reset sachet if returning to step 4
-  if (prev === 3) resetSachet();
+  if (prev === 4) resetSachet();
   ui();
 }
 
@@ -1147,7 +1153,7 @@ function pickE(el, i) {
   document.getElementById('reMsg').textContent    = d.msg;
   document.getElementById('reBridge').textContent = d.b;
   document.getElementById('reHook').textContent   = d.h;
-  setTimeout(() => go(6), 420);
+  setTimeout(() => go(7), 420);
 }
 
 /* ── SACHET ── */
@@ -1180,7 +1186,7 @@ function closeApplyModal() {
 document.getElementById('applyClose').addEventListener('click', closeApplyModal);
 document.getElementById('applyOk').addEventListener('click', () => {
   closeApplyModal();
-  go(8);
+  go(9);
   setTimeout(fanfare, 350);
 });
 document.getElementById('applyBackdrop').addEventListener('click', e => {
