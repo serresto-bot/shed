@@ -1,8 +1,11 @@
 {
-  "routes": [
-    { "src": "/", "dest": "/shed.html" },
-    { "src": "/shedevent1", "dest": "/shed-event.html" },
-    { "src": "/shedevent3", "dest": "/shed-event.html" },
-    { "src": "/shedevent5", "dest": "/shed-event.html" }
+  "rewrites": [
+    { "source": "/", "destination": "/shed.html" },
+    { "source": "/shed-new", "destination": "/shed-new.html" },
+    { "source": "/shedme", "destination": "/shedme.html" },
+    { "source": "/shop", "destination": "/shop.html" },
+    { "source": "/shedevent1", "destination": "/shed-event.html" },
+    { "source": "/shedevent3", "destination": "/shed-event.html" },
+    { "source": "/shedevent5", "destination": "/shed-event.html" }
   ]
 }
