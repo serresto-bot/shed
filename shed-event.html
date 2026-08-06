@@ -520,6 +520,101 @@ input{font-family:inherit}
   animation-delay:3.2s;
 }
 .ev-zero-price{font-size:26px;font-weight:900;color:var(--gold)}
+
+/* ── ADMIN ── */
+.admin-backdrop{
+  position:fixed;inset:0;
+  background:rgba(30,22,16,0.7);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:600;display:flex;align-items:flex-end;justify-content:center;
+  padding:0;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.admin-backdrop.open{opacity:1;pointer-events:auto}
+.admin-sheet{
+  background:var(--bg);color:var(--w);
+  border-radius:24px 24px 0 0;width:100%;max-width:460px;
+  max-height:85dvh;display:flex;flex-direction:column;
+  position:relative;
+  transform:translateY(40px);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 -8px 40px rgba(0,0,0,0.22);
+}
+.admin-backdrop.open .admin-sheet{transform:translateY(0)}
+.admin-header{
+  padding:16px 20px 12px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.admin-header-title{font-size:16px;font-weight:800;color:var(--w)}
+.admin-close-btn{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--line);color:var(--w);
+  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;
+}
+.admin-close-btn:hover{background:var(--sur2)}
+.admin-list{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:8px 0}
+.admin-item{
+  padding:12px 20px;cursor:pointer;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;
+  transition:background .15s;
+}
+.admin-item:hover{background:var(--surface)}
+.admin-item-info{flex:1}
+.admin-item-name{font-size:15px;font-weight:800;color:var(--w)}
+.admin-item-meta{font-size:12px;color:var(--w40);margin-top:2px}
+.admin-badge{
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;
+  background:var(--gold);color:var(--bg);flex-shrink:0;
+}
+.admin-empty{text-align:center;padding:40px 20px;color:var(--w40);font-size:14px}
+
+.admin-detail-backdrop{
+  position:fixed;inset:0;
+  background:rgba(30,22,16,0.7);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:700;display:flex;align-items:center;justify-content:center;
+  padding:20px;opacity:0;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.admin-detail-backdrop.open{opacity:1;pointer-events:auto}
+.admin-detail-modal{
+  background:var(--bg);color:var(--w);
+  border-radius:20px;width:100%;max-width:400px;
+  max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;
+  padding:24px 20px 28px;
+  transform:scale(.95);
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 12px 48px rgba(0,0,0,0.3);
+}
+.admin-detail-backdrop.open .admin-detail-modal{transform:scale(1)}
+.admin-detail-title{font-size:17px;font-weight:800;margin-bottom:14px;color:var(--w)}
+.admin-info-row{display:flex;gap:8px;margin-bottom:6px;font-size:13px}
+.admin-info-label{color:var(--w40);width:56px;flex-shrink:0}
+.admin-info-val{font-weight:700;color:var(--w)}
+.admin-input-label{font-size:12px;font-weight:700;color:var(--w40);margin:14px 0 6px;display:block}
+.admin-textarea{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--line);border-radius:10px;
+  font-size:14px;font-family:inherit;
+  background:var(--surface);color:var(--w);
+  outline:none;resize:vertical;min-height:56px;
+  transition:border-color .2s;
+}
+.admin-textarea:focus{border-color:var(--gold)}
+.admin-transfer-btn{
+  width:100%;background:var(--gold);color:var(--bg);
+  border:0;padding:14px;border-radius:999px;
+  font-weight:800;font-size:15px;cursor:pointer;
+  margin-top:18px;font-family:inherit;transition:opacity .15s;
+}
+.admin-transfer-btn:disabled{opacity:.45;cursor:default}
+.admin-cancel-btn{
+  width:100%;background:none;color:var(--w70);
+  border:1px solid var(--linemid);padding:12px;border-radius:999px;
+  font-weight:700;font-size:14px;cursor:pointer;
+  margin-top:8px;font-family:inherit;
+}
 </style>
 </head>
 <body>
@@ -912,6 +1007,35 @@ input{font-family:inherit}
 </div>
 
 
+<!-- ===== 어드민 리스트 시트 ===== -->
+<div class="admin-backdrop" id="adminBackdrop">
+  <div class="admin-sheet">
+    <div class="admin-header">
+      <span class="admin-header-title" id="adminTitle">링크 ? 신청 목록</span>
+      <button class="admin-close-btn" onclick="closeAdmin()">×</button>
+    </div>
+    <div class="admin-list" id="adminList">
+      <div class="admin-empty">불러오는 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 어드민 디테일 모달 ===== -->
+<div class="admin-detail-backdrop" id="adminDetailBackdrop">
+  <div class="admin-detail-modal">
+    <div class="admin-detail-title">신청자 상세</div>
+    <div id="adminInfoRows"></div>
+    <label class="admin-input-label">거주지 상세</label>
+    <textarea class="admin-textarea" id="adminAddress" placeholder="ex) 강남구 역삼동"></textarea>
+    <label class="admin-input-label">환경</label>
+    <textarea class="admin-textarea" id="adminEnv" placeholder="환경을 입력하세요"></textarea>
+    <label class="admin-input-label">반응</label>
+    <textarea class="admin-textarea" id="adminReaction" placeholder="반응을 입력하세요"></textarea>
+    <button class="admin-transfer-btn" id="adminTransferBtn" onclick="submitTransfer()">이관하기</button>
+    <button class="admin-cancel-btn" onclick="closeAdminDetail()">닫기</button>
+  </div>
+</div>
+
 <script>
 /* ── DATA ── */
 const QUIZ = [
@@ -1171,6 +1295,105 @@ function fanfare() {
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') back(); });
+
+/* ── ADMIN ── */
+let _adminRows = [];
+let _adminDetailIdx = null;
+
+async function openAdmin() {
+  const pw = prompt('관리자 비밀번호를 입력하세요');
+  if (pw === null) return;
+  if (pw !== '840314') { alert('비밀번호가 틀렸습니다.'); return; }
+  document.getElementById('adminTitle').textContent = '링크 ' + (EVENT_NUM || '?') + ' 신청 목록';
+  document.getElementById('adminList').innerHTML = '<div class="admin-empty">불러오는 중...</div>';
+  requestAnimationFrame(() => document.getElementById('adminBackdrop').classList.add('open'));
+  document.body.style.overflow = 'hidden';
+  try {
+    const res = await fetch(SHED_SCRIPT + '?event=' + EVENT_NUM);
+    const json = await res.json();
+    _adminRows = json.ok ? (json.rows || []).slice().reverse() : [];
+  } catch(e) {
+    _adminRows = [];
+  }
+  renderAdminList();
+}
+
+function renderAdminList() {
+  const el = document.getElementById('adminList');
+  if (!_adminRows.length) { el.innerHTML = '<div class="admin-empty">신청자가 없어요</div>'; return; }
+  el.innerHTML = _adminRows.map((r, i) =>
+    '<div class="admin-item" onclick="openAdminDetail(' + i + ')">' +
+      '<div class="admin-item-info">' +
+        '<div class="admin-item-name">' + (r.name || '-') + '</div>' +
+        '<div class="admin-item-meta">' + (r.age || '-') + '세 · ' + (r.region || '-') + ' · ' + (r.timestamp || '') + '</div>' +
+      '</div>' +
+      (r.transferred === '완료' ? '<span class="admin-badge">이관완료</span>' : '') +
+    '</div>'
+  ).join('');
+}
+
+function closeAdmin() {
+  document.getElementById('adminBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openAdminDetail(idx) {
+  _adminDetailIdx = idx;
+  const r = _adminRows[idx];
+  document.getElementById('adminInfoRows').innerHTML =
+    '<div class="admin-info-row"><span class="admin-info-label">이름</span><span class="admin-info-val">' + (r.name || '-') + '</span></div>' +
+    '<div class="admin-info-row"><span class="admin-info-label">나이</span><span class="admin-info-val">' + (r.age || '-') + '세</span></div>' +
+    '<div class="admin-info-row"><span class="admin-info-label">연락처</span><span class="admin-info-val">' + (r.phone || '-') + '</span></div>' +
+    '<div class="admin-info-row"><span class="admin-info-label">지역</span><span class="admin-info-val">' + (r.region || '-') + '</span></div>' +
+    '<div class="admin-info-row"><span class="admin-info-label">휴식유형</span><span class="admin-info-val">' + (r.rest || '-') + '</span></div>';
+  document.getElementById('adminAddress').value = r.address || '';
+  document.getElementById('adminEnv').value = r.env || '';
+  document.getElementById('adminReaction').value = r.reaction || '';
+  const btn = document.getElementById('adminTransferBtn');
+  if (r.transferred === '완료') {
+    btn.textContent = '이미 이관됨';
+    btn.disabled = true;
+  } else {
+    btn.textContent = '이관하기';
+    btn.disabled = false;
+  }
+  requestAnimationFrame(() => document.getElementById('adminDetailBackdrop').classList.add('open'));
+}
+
+function closeAdminDetail() {
+  document.getElementById('adminDetailBackdrop').classList.remove('open');
+}
+
+async function submitTransfer() {
+  const r = _adminRows[_adminDetailIdx];
+  const address = document.getElementById('adminAddress').value.trim();
+  const env = document.getElementById('adminEnv').value.trim();
+  const reaction = document.getElementById('adminReaction').value.trim();
+  const btn = document.getElementById('adminTransferBtn');
+  btn.disabled = true; btn.textContent = '이관 중...';
+  try {
+    await fetch(SHED_SCRIPT, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction })
+    });
+    _adminRows[_adminDetailIdx].transferred = '완료';
+    _adminRows[_adminDetailIdx].address = address;
+    _adminRows[_adminDetailIdx].env = env;
+    _adminRows[_adminDetailIdx].reaction = reaction;
+    renderAdminList();
+    closeAdminDetail();
+  } catch(e) {
+    alert('이관 실패: ' + e.message);
+    btn.disabled = false; btn.textContent = '이관하기';
+  }
+}
+
+document.getElementById('adminBackdrop').addEventListener('click', function(e) {
+  if (e.target === this) closeAdmin();
+});
+document.getElementById('adminDetailBackdrop').addEventListener('click', function(e) {
+  if (e.target === this) closeAdminDetail();
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </body>
