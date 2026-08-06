@@ -1032,6 +1032,8 @@ input{font-family:inherit}
     <textarea class="admin-textarea" id="adminEnv" placeholder="환경을 입력하세요"></textarea>
     <label class="admin-input-label">반응</label>
     <textarea class="admin-textarea" id="adminReaction" placeholder="반응을 입력하세요"></textarea>
+    <label class="admin-input-label">유입자</label>
+    <textarea class="admin-textarea" id="adminIntroducer" placeholder="유입자 이름을 입력하세요"></textarea>
     <button class="admin-transfer-btn" id="adminTransferBtn" onclick="submitTransfer()">이관하기</button>
     <button class="admin-cancel-btn" onclick="closeAdminDetail()">닫기</button>
   </div>
@@ -1360,6 +1362,7 @@ function openAdminDetail(idx) {
   document.getElementById('adminAddress').value = r.address || '';
   document.getElementById('adminEnv').value = r.env || '';
   document.getElementById('adminReaction').value = r.reaction || '';
+  document.getElementById('adminIntroducer').value = r.introducer || '';
   const btn = document.getElementById('adminTransferBtn');
   if (r.transferred === '완료') {
     btn.textContent = '이미 이관됨';
@@ -1380,17 +1383,19 @@ async function submitTransfer() {
   const address = document.getElementById('adminAddress').value.trim();
   const env = document.getElementById('adminEnv').value.trim();
   const reaction = document.getElementById('adminReaction').value.trim();
+  const introducer = document.getElementById('adminIntroducer').value.trim();
   const btn = document.getElementById('adminTransferBtn');
   btn.disabled = true; btn.textContent = '이관 중...';
   try {
     await fetch(SHED_SCRIPT, {
       method: 'POST',
-      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction })
+      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction, introducer })
     });
     _adminRows[_adminDetailIdx].transferred = '완료';
     _adminRows[_adminDetailIdx].address = address;
     _adminRows[_adminDetailIdx].env = env;
     _adminRows[_adminDetailIdx].reaction = reaction;
+    _adminRows[_adminDetailIdx].introducer = introducer;
     renderAdminList();
     closeAdminDetail();
   } catch(e) {
