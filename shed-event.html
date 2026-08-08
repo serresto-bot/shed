@@ -617,6 +617,61 @@ input{font-family:inherit}
   font-weight:700;font-size:14px;cursor:pointer;
   margin-top:8px;font-family:inherit;
 }
+
+/* ── 유입자 자동완성 ── */
+.intro-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative}
+.intro-ac-wrap{flex:1;position:relative}
+.intro-input{width:100%;background:var(--sur2);border:1.5px solid var(--line);
+  border-radius:10px;padding:11px 14px;font-size:14px;color:var(--w);
+  outline:none;font-family:inherit;transition:border-color .2s}
+.intro-input:focus{border-color:var(--gold)}
+.intro-input.confirmed{border-color:#4caf50;background:rgba(76,175,80,0.08)}
+.intro-input.error{border-color:#e53935}
+.intro-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--bg);border:1.5px solid var(--linemid);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:200;overflow:hidden;display:none}
+.intro-dropdown.show{display:block}
+.intro-option{padding:10px 14px;font-size:13px;cursor:pointer;color:var(--w);
+  transition:background .12s}
+.intro-option:hover{background:var(--gdim)}
+.intro-remove{flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:var(--surface);color:var(--w40);font-size:16px;line-height:28px;
+  text-align:center;cursor:pointer;transition:background .15s}
+.intro-remove:hover{background:rgba(229,57,53,0.15);color:#e53935}
+.intro-add-btn{width:100%;background:none;border:1.5px dashed var(--linemid);
+  border-radius:10px;padding:10px;font-size:13px;color:var(--w40);
+  cursor:pointer;font-family:inherit;margin-top:4px;transition:border-color .2s,color .2s}
+.intro-add-btn:hover{border-color:var(--gold);color:var(--gold)}
+.scratch-btn{width:100%;background:none;border:1.5px solid var(--gold);
+  border-radius:999px;padding:11px;font-size:14px;font-weight:800;
+  color:var(--gold);cursor:pointer;font-family:inherit;margin-top:10px;
+  transition:background .15s,color .15s;display:none}
+.scratch-btn:hover{background:var(--gdim)}
+
+/* ── 스크래치 복권 모달 ── */
+.scratch-backdrop{position:fixed;inset:0;background:rgba(30,22,16,0.75);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:600;opacity:0;pointer-events:none;transition:opacity .3s}
+.scratch-backdrop.open{opacity:1;pointer-events:auto}
+.scratch-modal{background:var(--bg);border-radius:24px;padding:28px 24px;
+  width:100%;max-width:320px;text-align:center}
+.scratch-title{font-size:16px;font-weight:800;margin-bottom:6px}
+.scratch-sub{font-size:12px;color:var(--w40);margin-bottom:20px}
+.scratch-wrap{position:relative;width:240px;height:100px;margin:0 auto 20px;
+  border-radius:16px;overflow:hidden}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:22px;font-weight:900;color:var(--gold);
+  background:var(--gdim);border:2px solid rgba(139,101,53,0.3)}
+#scratchCanvas{position:absolute;inset:0;cursor:crosshair;touch-action:none}
+.scratch-close-btn{background:none;border:1px solid var(--linemid);border-radius:999px;
+  padding:10px 24px;font-size:13px;font-weight:700;color:var(--w70);
+  cursor:pointer;font-family:inherit}
+.scratch-confirm-btn{width:100%;background:linear-gradient(135deg,var(--gold),#9E7840);
+  border:none;border-radius:999px;padding:13px;font-size:15px;font-weight:800;
+  color:#fff;cursor:pointer;font-family:inherit;margin-bottom:10px;display:none}
+.scratch-confirm-btn.visible{display:block}
+.scratch-btn-row{display:flex;flex-direction:column;align-items:stretch;gap:0}
 </style>
 </head>
 <body>
@@ -1039,9 +1094,26 @@ input{font-family:inherit}
     <label class="admin-input-label">반응</label>
     <textarea class="admin-textarea" id="adminReaction" placeholder="반응을 입력하세요"></textarea>
     <label class="admin-input-label">유입자</label>
-    <textarea class="admin-textarea" id="adminIntroducer" placeholder="유입자 이름을 입력하세요"></textarea>
+    <div id="introducerList"></div>
+    <button type="button" class="intro-add-btn" onclick="addIntroducerRow()">+ 행 추가</button>
     <button class="admin-transfer-btn" id="adminTransferBtn" onclick="submitTransfer()">이관하기</button>
     <button class="admin-cancel-btn" onclick="closeAdminDetail()">닫기</button>
+  </div>
+</div>
+
+<!-- ===== 스크래치 복권 모달 ===== -->
+<div class="scratch-backdrop" id="scratchBackdrop">
+  <div class="scratch-modal">
+    <div class="scratch-title">🎟 유입자 추첨</div>
+    <div class="scratch-sub" id="scratchSub">긁어서 당첨자를 확인하세요</div>
+    <div class="scratch-wrap">
+      <div class="scratch-result" id="scratchResult"></div>
+      <canvas id="scratchCanvas" width="240" height="100"></canvas>
+    </div>
+    <div class="scratch-btn-row">
+      <button class="scratch-confirm-btn" id="scratchConfirmBtn" onclick="confirmScratchTransfer()">이관하기</button>
+      <button class="scratch-close-btn" onclick="closeScratch()">취소</button>
+    </div>
   </div>
 </div>
 
@@ -1308,11 +1380,18 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') back(); });
 /* ── ADMIN ── */
 let _adminRows = [];
 let _adminDetailIdx = null;
+let _adminPw = null;
 
 async function openAdmin() {
   const pw = prompt('관리자 비밀번호를 입력하세요');
   if (pw === null) return;
-  if (pw !== '840314') { alert('비밀번호가 틀렸습니다.'); return; }
+  const authRes = await fetch('/api/admin-auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pw })
+  });
+  if (!authRes.ok) { alert('비밀번호가 틀렸습니다.'); return; }
+  _adminPw = pw;
   document.getElementById('adminTitle').textContent = '링크 ' + (EVENT_NUM || '?') + ' 신청 목록';
   document.getElementById('adminList').innerHTML = '<div class="admin-empty">불러오는 중...</div>';
   document.getElementById('adminPage').classList.add('open');
@@ -1356,8 +1435,173 @@ function closeAdmin() {
   document.body.style.overflow = '';
 }
 
+/* ── 유입자 자동완성 ── */
+let _ddochiUsers = null;
+
+async function loadDdochiUsers() {
+  if (_ddochiUsers) return;
+  try {
+    const keyRes = await fetch('/api/ddochi-users', {
+      headers: { 'x-admin-pw': _adminPw || '' }
+    });
+    const { ok, key } = await keyRes.json();
+    if (!ok) { _ddochiUsers = []; return; }
+    const res = await fetch('https://page.ddochi.cloud/api/shed/users', {
+      headers: { 'x-shed-key': key }
+    });
+    const data = await res.json();
+    _ddochiUsers = data.ok ? data.users : [];
+  } catch(e) {
+    _ddochiUsers = [];
+  }
+}
+
+function addIntroducerRow(name, sabun) {
+  const list = document.getElementById('introducerList');
+  const row = document.createElement('div');
+  row.className = 'intro-row';
+  row.dataset.sabun = sabun || '';
+  row.dataset.confirmed = sabun ? '1' : '';
+  row.innerHTML =
+    '<div class="intro-ac-wrap">' +
+      '<input type="text" class="intro-input' + (sabun ? ' confirmed' : '') + '" ' +
+        'placeholder="이름 검색..." autocomplete="off" value="' + (name || '') + '">' +
+      '<div class="intro-dropdown"></div>' +
+    '</div>' +
+    '<button type="button" class="intro-remove" onclick="removeIntroducerRow(this)">×</button>';
+
+  const input = row.querySelector('.intro-input');
+  const dropdown = row.querySelector('.intro-dropdown');
+
+  input.addEventListener('input', () => {
+    row.dataset.confirmed = '';
+    row.dataset.sabun = '';
+    input.classList.remove('confirmed', 'error');
+    const q = input.value.trim();
+    if (!q || !_ddochiUsers) { dropdown.classList.remove('show'); return; }
+    const hits = _ddochiUsers.filter(u => u.name.includes(q)).slice(0, 8);
+    if (!hits.length) { dropdown.classList.remove('show'); return; }
+    dropdown.innerHTML = hits.map(u =>
+      '<div class="intro-option" data-name="' + u.name + '" data-sabun="' + u.sabun + '">' + u.name + '</div>'
+    ).join('');
+    dropdown.classList.add('show');
+  });
+
+  dropdown.addEventListener('click', e => {
+    const opt = e.target.closest('.intro-option');
+    if (!opt) return;
+    input.value = opt.dataset.name;
+    row.dataset.sabun = opt.dataset.sabun;
+    row.dataset.confirmed = '1';
+    input.classList.add('confirmed');
+    input.classList.remove('error');
+    dropdown.classList.remove('show');
+    updateIntroducerUI();
+  });
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => dropdown.classList.remove('show'), 150);
+    if (input.value.trim() && !row.dataset.confirmed) {
+      input.classList.add('error');
+    }
+  });
+
+  list.appendChild(row);
+  updateIntroducerUI();
+  input.focus();
+}
+
+function removeIntroducerRow(btn) {
+  btn.closest('.intro-row').remove();
+  updateIntroducerUI();
+}
+
+function updateIntroducerUI() {}
+
+function getIntroducers() {
+  return [...document.querySelectorAll('#introducerList .intro-row')]
+    .filter(r => r.dataset.confirmed === '1')
+    .map(r => ({ name: r.querySelector('.intro-input').value.trim(), sabun: r.dataset.sabun }));
+}
+
+/* ── 스크래치 복권 ── */
+let _scratchWinner = null;
+
+function openScratch() {
+  const confirmed = getIntroducers();
+  if (confirmed.length < 2) return;
+  _scratchWinner = confirmed[Math.floor(Math.random() * confirmed.length)];
+
+  const allNames = confirmed.map(u => u.name).join(' · ');
+  document.getElementById('scratchSub').textContent = '후보: ' + allNames;
+  document.getElementById('scratchResult').textContent = _scratchWinner.name;
+  document.getElementById('scratchConfirmBtn').textContent = _scratchWinner.name + '로 이관하기';
+  document.getElementById('scratchConfirmBtn').classList.remove('visible');
+
+  const canvas = document.getElementById('scratchCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 240; canvas.height = 100;
+  const grad = ctx.createLinearGradient(0, 0, 240, 100);
+  grad.addColorStop(0, '#8B6535');
+  grad.addColorStop(0.5, '#C8A96E');
+  grad.addColorStop(1, '#8B6535');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 240, 100);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '700 14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✦ 긁어서 확인 ✦', 120, 50);
+
+  let painting = false;
+  function scratch(x, y) {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 24, 0, Math.PI * 2);
+    ctx.fill();
+    checkReveal(ctx, canvas);
+  }
+  function pos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - rect.left) * (canvas.width / rect.width),
+             y: (src.clientY - rect.top)  * (canvas.height / rect.height) };
+  }
+  canvas.onmousedown  = e => { painting = true;  scratch(...Object.values(pos(e))); };
+  canvas.onmousemove  = e => { if (painting) scratch(...Object.values(pos(e))); };
+  canvas.onmouseup    = () => { painting = false; };
+  canvas.ontouchstart = e => { e.preventDefault(); painting = true;  scratch(...Object.values(pos(e))); };
+  canvas.ontouchmove  = e => { e.preventDefault(); if (painting) scratch(...Object.values(pos(e))); };
+  canvas.ontouchend   = () => { painting = false; };
+
+  document.getElementById('scratchBackdrop').classList.add('open');
+}
+
+function checkReveal(ctx, canvas) {
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  let transparent = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] === 0) transparent++;
+  if (transparent / (canvas.width * canvas.height) > 0.40) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById('scratchConfirmBtn').classList.add('visible');
+  }
+}
+
+function closeScratch() {
+  document.getElementById('scratchBackdrop').classList.remove('open');
+  _scratchWinner = null;
+}
+
+async function confirmScratchTransfer() {
+  if (!_scratchWinner) return;
+  const winner = _scratchWinner;
+  closeScratch();
+  await doTransfer(winner.name);
+}
+
 function openAdminDetail(idx) {
   _adminDetailIdx = idx;
+  loadDdochiUsers();
   const r = _adminRows[idx];
   document.getElementById('adminInfoRows').innerHTML =
     '<div class="admin-info-row"><span class="admin-info-label">이름</span><span class="admin-info-val">' + (r.name || '-') + '</span></div>' +
@@ -1368,7 +1612,14 @@ function openAdminDetail(idx) {
   document.getElementById('adminAddress').value = r.address || '';
   document.getElementById('adminEnv').value = r.env || '';
   document.getElementById('adminReaction').value = r.reaction || '';
-  document.getElementById('adminIntroducer').value = r.introducer || '';
+  document.getElementById('introducerList').innerHTML = '';
+  document.getElementById('scratchBtn').style.display = 'none';
+  if (r.introducer) {
+    r.introducer.split(',').forEach(n => {
+      const name = n.trim();
+      if (name) addIntroducerRow(name, null);
+    });
+  }
   const btn = document.getElementById('adminTransferBtn');
   if (r.transferred === '완료') {
     btn.textContent = '이미 이관됨';
@@ -1385,23 +1636,32 @@ function closeAdminDetail() {
 }
 
 async function submitTransfer() {
+  const confirmed = getIntroducers();
+  if (confirmed.length >= 2) {
+    openScratch();
+    return;
+  }
+  const singleName = confirmed.length === 1 ? confirmed[0].name : '';
+  await doTransfer(singleName);
+}
+
+async function doTransfer(introducerName) {
   const r = _adminRows[_adminDetailIdx];
   const address = document.getElementById('adminAddress').value.trim();
   const env = document.getElementById('adminEnv').value.trim();
   const reaction = document.getElementById('adminReaction').value.trim();
-  const introducer = document.getElementById('adminIntroducer').value.trim();
   const btn = document.getElementById('adminTransferBtn');
   btn.disabled = true; btn.textContent = '이관 중...';
   try {
     await fetch(SHED_SCRIPT, {
       method: 'POST',
-      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction, introducer })
+      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction, introducer: introducerName })
     });
     _adminRows[_adminDetailIdx].transferred = '완료';
     _adminRows[_adminDetailIdx].address = address;
     _adminRows[_adminDetailIdx].env = env;
     _adminRows[_adminDetailIdx].reaction = reaction;
-    _adminRows[_adminDetailIdx].introducer = introducer;
+    _adminRows[_adminDetailIdx].introducer = introducerName;
     renderAdminList();
     closeAdminDetail();
   } catch(e) {
