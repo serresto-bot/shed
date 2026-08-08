@@ -652,7 +652,7 @@ input{font-family:inherit}
 .scratch-backdrop{position:fixed;inset:0;background:rgba(30,22,16,0.75);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   display:flex;align-items:center;justify-content:center;
-  z-index:600;opacity:0;pointer-events:none;transition:opacity .3s}
+  z-index:800;opacity:0;pointer-events:none;transition:opacity .3s}
 .scratch-backdrop.open{opacity:1;pointer-events:auto}
 .scratch-modal{background:var(--bg);border-radius:24px;padding:28px 24px;
   width:100%;max-width:320px;text-align:center}
@@ -1574,6 +1574,7 @@ function openScratch() {
   canvas.ontouchmove  = e => { e.preventDefault(); if (painting) scratch(...Object.values(pos(e))); };
   canvas.ontouchend   = () => { painting = false; };
 
+  closeAdminDetail();
   document.getElementById('scratchBackdrop').classList.add('open');
 }
 
