@@ -1613,11 +1613,10 @@ function openAdminDetail(idx) {
   document.getElementById('adminEnv').value = r.env || '';
   document.getElementById('adminReaction').value = r.reaction || '';
   document.getElementById('introducerList').innerHTML = '';
-  document.getElementById('scratchBtn').style.display = 'none';
   if (r.introducer) {
     r.introducer.split(',').forEach(n => {
       const name = n.trim();
-      if (name) addIntroducerRow(name, null);
+      if (name) addIntroducerRow(name, 'existing');
     });
   }
   const btn = document.getElementById('adminTransferBtn');
