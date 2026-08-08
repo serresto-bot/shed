@@ -664,14 +664,19 @@ input{font-family:inherit}
   justify-content:center;font-size:22px;font-weight:900;color:var(--gold);
   background:var(--gdim);border:2px solid rgba(139,101,53,0.3)}
 #scratchCanvas{position:absolute;inset:0;cursor:crosshair;touch-action:none}
+.scratch-reveal-area{margin:20px 0;min-height:80px;display:flex;align-items:center;justify-content:center}
+.scratch-roll-btn{background:linear-gradient(135deg,var(--gold),#9E7840);border:none;
+  border-radius:999px;padding:14px 36px;font-size:16px;font-weight:800;
+  color:#fff;cursor:pointer;font-family:inherit}
+.scratch-roll-btn:active{opacity:.85}
+.scratch-result-name{font-size:28px;font-weight:900;color:var(--gold);letter-spacing:1px}
+.scratch-btn-row{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+.scratch-confirm-btn{width:100%;background:linear-gradient(135deg,var(--gold),#9E7840);
+  border:none;border-radius:999px;padding:13px;font-size:15px;font-weight:800;
+  color:#fff;cursor:pointer;font-family:inherit}
 .scratch-close-btn{background:none;border:1px solid var(--linemid);border-radius:999px;
   padding:10px 24px;font-size:13px;font-weight:700;color:var(--w70);
   cursor:pointer;font-family:inherit}
-.scratch-confirm-btn{width:100%;background:linear-gradient(135deg,var(--gold),#9E7840);
-  border:none;border-radius:999px;padding:13px;font-size:15px;font-weight:800;
-  color:#fff;cursor:pointer;font-family:inherit;margin-bottom:10px;display:none}
-.scratch-confirm-btn.visible{display:block}
-.scratch-btn-row{display:flex;flex-direction:column;align-items:stretch;gap:0}
 </style>
 </head>
 <body>
@@ -1101,17 +1106,17 @@ input{font-family:inherit}
   </div>
 </div>
 
-<!-- ===== 스크래치 복권 모달 ===== -->
+<!-- ===== 유입자 추첨 모달 ===== -->
 <div class="scratch-backdrop" id="scratchBackdrop">
   <div class="scratch-modal">
     <div class="scratch-title">🎟 유입자 추첨</div>
-    <div class="scratch-sub" id="scratchSub">긁어서 당첨자를 확인하세요</div>
-    <div class="scratch-wrap">
-      <div class="scratch-result" id="scratchResult"></div>
-      <canvas id="scratchCanvas" width="240" height="100"></canvas>
+    <div class="scratch-sub" id="scratchSub"></div>
+    <div class="scratch-reveal-area" id="scratchRevealArea">
+      <button class="scratch-roll-btn" id="scratchRollBtn" onclick="revealWinner()">🎟 추첨하기</button>
+      <div class="scratch-result-name" id="scratchResultName" style="display:none"></div>
     </div>
     <div class="scratch-btn-row">
-      <button class="scratch-confirm-btn" id="scratchConfirmBtn" onclick="confirmScratchTransfer()">이관하기</button>
+      <button class="scratch-confirm-btn" id="scratchConfirmBtn" style="display:none" onclick="confirmScratchTransfer()">이관하기</button>
       <button class="scratch-close-btn" onclick="closeScratch()">취소</button>
     </div>
   </div>
@@ -1524,7 +1529,7 @@ function getIntroducers() {
     .map(r => ({ name: r.querySelector('.intro-input').value.trim(), sabun: r.dataset.sabun }));
 }
 
-/* ── 스크래치 복권 ── */
+/* ── 유입자 추첨 ── */
 let _scratchWinner = null;
 
 function openScratch() {
@@ -1532,60 +1537,22 @@ function openScratch() {
   if (confirmed.length < 2) return;
   _scratchWinner = confirmed[Math.floor(Math.random() * confirmed.length)];
 
-  const allNames = confirmed.map(u => u.name).join(' · ');
-  document.getElementById('scratchSub').textContent = '후보: ' + allNames;
-  document.getElementById('scratchResult').textContent = _scratchWinner.name;
+  document.getElementById('scratchSub').textContent = '후보: ' + confirmed.map(u => u.name).join(' · ');
+  document.getElementById('scratchRollBtn').style.display = '';
+  document.getElementById('scratchResultName').style.display = 'none';
+  document.getElementById('scratchResultName').textContent = '';
+  document.getElementById('scratchConfirmBtn').style.display = 'none';
   document.getElementById('scratchConfirmBtn').textContent = _scratchWinner.name + '로 이관하기';
-  document.getElementById('scratchConfirmBtn').classList.remove('visible');
-
-  const canvas = document.getElementById('scratchCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = 240; canvas.height = 100;
-  const grad = ctx.createLinearGradient(0, 0, 240, 100);
-  grad.addColorStop(0, '#8B6535');
-  grad.addColorStop(0.5, '#C8A96E');
-  grad.addColorStop(1, '#8B6535');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 240, 100);
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = '700 14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('✦ 긁어서 확인 ✦', 120, 50);
-
-  let painting = false;
-  function scratch(x, y) {
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 24, 0, Math.PI * 2);
-    ctx.fill();
-    checkReveal(ctx, canvas);
-  }
-  function pos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const src = e.touches ? e.touches[0] : e;
-    return { x: (src.clientX - rect.left) * (canvas.width / rect.width),
-             y: (src.clientY - rect.top)  * (canvas.height / rect.height) };
-  }
-  canvas.onmousedown  = e => { painting = true;  scratch(...Object.values(pos(e))); };
-  canvas.onmousemove  = e => { if (painting) scratch(...Object.values(pos(e))); };
-  canvas.onmouseup    = () => { painting = false; };
-  canvas.ontouchstart = e => { e.preventDefault(); painting = true;  scratch(...Object.values(pos(e))); };
-  canvas.ontouchmove  = e => { e.preventDefault(); if (painting) scratch(...Object.values(pos(e))); };
-  canvas.ontouchend   = () => { painting = false; };
 
   closeAdminDetail();
   document.getElementById('scratchBackdrop').classList.add('open');
 }
 
-function checkReveal(ctx, canvas) {
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  let transparent = 0;
-  for (let i = 3; i < data.length; i += 4) if (data[i] === 0) transparent++;
-  if (transparent / (canvas.width * canvas.height) > 0.40) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    document.getElementById('scratchConfirmBtn').classList.add('visible');
-  }
+function revealWinner() {
+  document.getElementById('scratchRollBtn').style.display = 'none';
+  document.getElementById('scratchResultName').textContent = _scratchWinner.name;
+  document.getElementById('scratchResultName').style.display = '';
+  document.getElementById('scratchConfirmBtn').style.display = '';
 }
 
 function closeScratch() {
