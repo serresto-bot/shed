@@ -1617,6 +1617,12 @@ async function doTransfer(introducerName) {
   const address = document.getElementById('adminAddress').value.trim();
   const env = document.getElementById('adminEnv').value.trim();
   const reaction = document.getElementById('adminReaction').value.trim();
+  const missing = [];
+  if (!address)       missing.push('거주지');
+  if (!env)           missing.push('환경');
+  if (!reaction)      missing.push('반응');
+  if (!introducerName) missing.push('유입자');
+  if (missing.length) { alert('이관 불가: ' + missing.join(', ') + ' 항목을 채워주세요.'); return; }
   const btn = document.getElementById('adminTransferBtn');
   btn.disabled = true; btn.textContent = '이관 중...';
   try {
