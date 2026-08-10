@@ -627,6 +627,7 @@ input{font-family:inherit}
   color-scheme:dark;
 }
 .admin-input:focus{border-color:var(--gold)}
+.admin-tm-row{display:flex;gap:8px}
 
 /* ── 시간 선택 ── */
 .time-slot-section{margin:6px 0 4px}
@@ -1136,7 +1137,10 @@ input{font-family:inherit}
     <label class="admin-input-label">유입 장소(활동지)</label>
     <input type="text" class="admin-input" id="adminTmLocation" placeholder="예) 강남역 2번출구 스타벅스" />
     <label class="admin-input-label">티엠예약일시</label>
-    <input type="datetime-local" class="admin-input" id="adminTmDatetime" />
+    <div class="admin-tm-row">
+      <input type="date" class="admin-input" id="adminTmDate" style="flex:1" />
+      <select class="admin-input" id="adminTmTime" style="flex:1"></select>
+    </div>
     <label class="admin-input-label">유입자</label>
     <div id="introducerList"></div>
     <button type="button" class="intro-add-btn" onclick="addIntroducerRow()">+ 행 추가</button>
@@ -1623,11 +1627,14 @@ function openAdminDetail(idx) {
   document.getElementById('adminEnv').value = r.env || '';
   document.getElementById('adminReaction').value = r.reaction || '';
   document.getElementById('adminTmLocation').value = r.tmLocation || '';
-  // tmDatetime: 저장된 값 우선, 없으면 timestamp 날짜 + selectedTime으로 초기화
-  function _normTime(val) {
+  // 모든 형식(ISO, 한국어, HH:MM)에서 "HH:MM" 추출
+  function _extractTime(val) {
     if (!val) return '';
     const s = String(val);
-    // "오전 11:45:00" / "오후 2:30:00" 형식 처리
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      const d = new Date(s);
+      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
     const ko = s.match(/(오전|오후)\s+(\d+):(\d+)/);
     if (ko) {
       let h = parseInt(ko[2]);
@@ -1635,21 +1642,25 @@ function openAdminDetail(idx) {
       if (ko[1] === '오전' && h === 12) h = 0;
       return String(h).padStart(2,'0') + ':' + ko[3];
     }
-    return s.slice(0, 5); // "HH:MM:SS" → "HH:MM" / 이미 "HH:MM"이면 그대로
+    return s.slice(0, 5);
   }
-  function _normDate(val) {
-    if (!val) return '';
-    const s = String(val);
-    if (s.includes('T')) return s.slice(0, 10); // ISO "2026-08-10T..."
-    return s.split(' ')[0].replace(/\//g, '-');  // "2026/08/10 ..." or "2026-08-10 ..."
+  // 날짜: 저장된 tmDatetime에서 파싱, 없으면 오늘
+  let _dateVal = '', _timeVal = '';
+  if (r.tmDatetime) {
+    const s = String(r.tmDatetime);
+    const d = new Date(s.includes('T') ? s : s.replace(' ', 'T'));
+    if (!isNaN(d)) {
+      _dateVal = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      _timeVal = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
   }
-  let _tmDt = r.tmDatetime || '';
-  if (!_tmDt && r.selectedTime) {
-    const _selTime = _normTime(r.selectedTime);
-    const _datePart = _normDate(r.timestamp);
-    if (_datePart && _selTime) _tmDt = _datePart + 'T' + _selTime;
+  if (!_dateVal) {
+    const t = new Date();
+    _dateVal = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
   }
-  document.getElementById('adminTmDatetime').value = _tmDt;
+  if (!_timeVal) _timeVal = _extractTime(r.selectedTime);
+  document.getElementById('adminTmDate').value = _dateVal;
+  document.getElementById('adminTmTime').value = _timeVal;
   document.getElementById('introducerList').innerHTML = '';
   if (r.introducer) {
     r.introducer.split(',').forEach(n => {
@@ -1688,7 +1699,9 @@ async function doTransfer(introducerName) {
   const env = document.getElementById('adminEnv').value.trim();
   const reaction = document.getElementById('adminReaction').value.trim();
   const tmLocation = document.getElementById('adminTmLocation').value.trim();
-  const tmDatetime = document.getElementById('adminTmDatetime').value;
+  const _tmDate = document.getElementById('adminTmDate').value;
+  const _tmTime = document.getElementById('adminTmTime').value;
+  const tmDatetime = (_tmDate && _tmTime) ? _tmDate + 'T' + _tmTime : _tmDate || '';
   const missing = [];
   if (!address)       missing.push('거주지');
   if (!env)           missing.push('환경');
@@ -1720,6 +1733,23 @@ async function doTransfer(introducerName) {
 document.getElementById('adminDetailBackdrop').addEventListener('click', function(e) {
   if (e.target === this) closeAdminDetail();
 });
+
+/* ── 티엠예약 시간 select 옵션 생성 ── */
+(function() {
+  const sel = document.getElementById('adminTmTime');
+  const opt = document.createElement('option');
+  opt.value = ''; opt.textContent = '시간 선택';
+  sel.appendChild(opt);
+  for (let h = 9; h <= 24; h++) {
+    ['00','15','30','45'].forEach(function(m) {
+      if (h === 24 && m !== '00') return;
+      const val = String(h).padStart(2,'0') + ':' + m;
+      const o = document.createElement('option');
+      o.value = val; o.textContent = val;
+      sel.appendChild(o);
+    });
+  }
+})();
 
 /* ── 시간 선택 (신청 모달) ── */
 (function() {
