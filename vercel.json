@@ -5,7 +5,10 @@
     { "source": "/shedme", "destination": "/shedme.html" },
     { "source": "/shop", "destination": "/shop.html" },
     { "source": "/shedevent1", "destination": "/shed-event.html" },
+    { "source": "/shedevent2", "destination": "/shed-event.html" },
     { "source": "/shedevent3", "destination": "/shed-event.html" },
-    { "source": "/shedevent5", "destination": "/shed-event.html" }
+    { "source": "/shedevent4", "destination": "/shed-event.html" },
+    { "source": "/shedevent5", "destination": "/shed-event.html" },
+    { "source": "/shedevent6", "destination": "/shed-event.html" }
   ]
 }
