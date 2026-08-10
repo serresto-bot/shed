@@ -1624,10 +1624,30 @@ function openAdminDetail(idx) {
   document.getElementById('adminReaction').value = r.reaction || '';
   document.getElementById('adminTmLocation').value = r.tmLocation || '';
   // tmDatetime: 저장된 값 우선, 없으면 timestamp 날짜 + selectedTime으로 초기화
+  function _normTime(val) {
+    if (!val) return '';
+    const s = String(val);
+    // "오전 11:45:00" / "오후 2:30:00" 형식 처리
+    const ko = s.match(/(오전|오후)\s+(\d+):(\d+)/);
+    if (ko) {
+      let h = parseInt(ko[2]);
+      if (ko[1] === '오후' && h !== 12) h += 12;
+      if (ko[1] === '오전' && h === 12) h = 0;
+      return String(h).padStart(2,'0') + ':' + ko[3];
+    }
+    return s.slice(0, 5); // "HH:MM:SS" → "HH:MM" / 이미 "HH:MM"이면 그대로
+  }
+  function _normDate(val) {
+    if (!val) return '';
+    const s = String(val);
+    if (s.includes('T')) return s.slice(0, 10); // ISO "2026-08-10T..."
+    return s.split(' ')[0].replace(/\//g, '-');  // "2026/08/10 ..." or "2026-08-10 ..."
+  }
   let _tmDt = r.tmDatetime || '';
   if (!_tmDt && r.selectedTime) {
-    const _datePart = (r.timestamp || '').split(' ')[0].replace(/\//g, '-');
-    if (_datePart) _tmDt = _datePart + 'T' + r.selectedTime;
+    const _selTime = _normTime(r.selectedTime);
+    const _datePart = _normDate(r.timestamp);
+    if (_datePart && _selTime) _tmDt = _datePart + 'T' + _selTime;
   }
   document.getElementById('adminTmDatetime').value = _tmDt;
   document.getElementById('introducerList').innerHTML = '';
