@@ -617,6 +617,31 @@ input{font-family:inherit}
   font-weight:700;font-size:14px;cursor:pointer;
   margin-top:8px;font-family:inherit;
 }
+.admin-input{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--line);border-radius:10px;
+  font-size:14px;font-family:inherit;
+  background:var(--surface);color:var(--w);
+  outline:none;-webkit-appearance:none;appearance:none;
+  transition:border-color .2s;
+  color-scheme:dark;
+}
+.admin-input:focus{border-color:var(--gold)}
+
+/* ── 시간 선택 ── */
+.time-slot-section{margin:6px 0 4px}
+.time-slot-row-label{font-size:11px;color:var(--w40);margin-bottom:5px;font-weight:700;letter-spacing:.03em}
+.time-hour-btns,.time-min-btns{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.time-slot-btn{
+  padding:7px 10px;border:1.5px solid var(--line);border-radius:8px;
+  font-size:12px;font-weight:700;background:var(--surface);color:var(--w);
+  cursor:pointer;font-family:inherit;transition:all .15s;text-align:center;
+}
+.time-slot-btn:hover:not(.sold){border-color:var(--gold);background:var(--gdim)}
+.time-slot-btn.sel{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.time-slot-btn.sold{color:var(--w40);border-color:var(--line);cursor:default;text-decoration:line-through;opacity:.45}
+.time-slot-remaining{font-size:9px;font-weight:400;display:block;margin-top:1px;color:var(--w40)}
+.time-slot-btn.sel .time-slot-remaining{color:rgba(30,22,16,0.5)}
 
 /* ── 유입자 자동완성 ── */
 .intro-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative}
@@ -1053,6 +1078,16 @@ input{font-family:inherit}
           </div>
         </div>
         <div class="apply-field">
+          <label>언제 연락받으실 수 있나요?</label>
+          <div class="time-slot-section">
+            <div class="time-slot-row-label">시</div>
+            <div class="time-hour-btns" id="timeHourBtns"></div>
+            <div class="time-slot-row-label">분</div>
+            <div class="time-min-btns" id="timeMinBtns"></div>
+          </div>
+          <div id="apTimeError" style="color:#b94a2c;font-size:12px;margin-top:-4px;display:none">시간을 선택해주세요</div>
+        </div>
+        <div class="apply-field">
           <label>지금 원하는 휴식은?</label>
           <div class="modal-chips">
             <button type="button" class="modal-chip" onclick="selModalChip(this)">🛋️ 아무것도 안 하고<br>그냥 눕기</button>
@@ -1098,6 +1133,10 @@ input{font-family:inherit}
     <textarea class="admin-textarea" id="adminEnv" placeholder="환경을 입력하세요"></textarea>
     <label class="admin-input-label">반응</label>
     <textarea class="admin-textarea" id="adminReaction" placeholder="반응을 입력하세요"></textarea>
+    <label class="admin-input-label">유입 장소(활동지)</label>
+    <input type="text" class="admin-input" id="adminTmLocation" placeholder="예) 강남역 2번출구 스타벅스" />
+    <label class="admin-input-label">티엠예약일시</label>
+    <input type="datetime-local" class="admin-input" id="adminTmDatetime" />
     <label class="admin-input-label">유입자</label>
     <div id="introducerList"></div>
     <button type="button" class="intro-add-btn" onclick="addIntroducerRow()">+ 행 추가</button>
@@ -1313,12 +1352,15 @@ document.getElementById('applyForm').addEventListener('submit', async e => {
   const age = document.getElementById('apAge').value.trim();
   const region = apRegionInput.value;
   const chip = document.querySelector('.modal-chip.sel');
+  const selectedTime = window._getSelectedTime ? window._getSelectedTime() : null;
   if (!name || !phone || !age) { alert('이름, 연락처, 나이를 입력해주세요.'); return; }
   if (!region) { apRegionError.hidden = false; return; }
+  if (!selectedTime) { document.getElementById('apTimeError').style.display = 'block'; return; }
+  document.getElementById('apTimeError').style.display = 'none';
   if (!chip) { alert('원하는 휴식 유형을 선택해주세요.'); return; }
   const btn = document.getElementById('applySubmit');
   btn.disabled = true; btn.textContent = '신청중...';
-  const payload = { event: EVENT_NUM, name, phone, age, region, rest: chip.textContent.replace(/\n/g,' '), scent: QUIZ[quizIdx].scent };
+  const payload = { event: EVENT_NUM, name, phone, age, region, selectedTime, rest: chip.textContent.replace(/\n/g,' '), scent: QUIZ[quizIdx].scent };
   try {
     await fetch(SHED_SCRIPT, { method:'POST', body: JSON.stringify(payload) });
   } catch(_) {}
@@ -1580,6 +1622,14 @@ function openAdminDetail(idx) {
   document.getElementById('adminAddress').value = r.address || '';
   document.getElementById('adminEnv').value = r.env || '';
   document.getElementById('adminReaction').value = r.reaction || '';
+  document.getElementById('adminTmLocation').value = r.tmLocation || '';
+  // tmDatetime: 저장된 값 우선, 없으면 timestamp 날짜 + selectedTime으로 초기화
+  let _tmDt = r.tmDatetime || '';
+  if (!_tmDt && r.selectedTime) {
+    const _datePart = (r.timestamp || '').split(' ')[0].replace(/\//g, '-');
+    if (_datePart) _tmDt = _datePart + 'T' + r.selectedTime;
+  }
+  document.getElementById('adminTmDatetime').value = _tmDt;
   document.getElementById('introducerList').innerHTML = '';
   if (r.introducer) {
     r.introducer.split(',').forEach(n => {
@@ -1617,6 +1667,8 @@ async function doTransfer(introducerName) {
   const address = document.getElementById('adminAddress').value.trim();
   const env = document.getElementById('adminEnv').value.trim();
   const reaction = document.getElementById('adminReaction').value.trim();
+  const tmLocation = document.getElementById('adminTmLocation').value.trim();
+  const tmDatetime = document.getElementById('adminTmDatetime').value;
   const missing = [];
   if (!address)       missing.push('거주지');
   if (!env)           missing.push('환경');
@@ -1628,13 +1680,15 @@ async function doTransfer(introducerName) {
   try {
     await fetch(SHED_SCRIPT, {
       method: 'POST',
-      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction, introducer: introducerName })
+      body: JSON.stringify({ type: 'update', rowNum: r.rowNum, address, env, reaction, introducer: introducerName, tmLocation, tmDatetime })
     });
     _adminRows[_adminDetailIdx].transferred = '완료';
     _adminRows[_adminDetailIdx].address = address;
     _adminRows[_adminDetailIdx].env = env;
     _adminRows[_adminDetailIdx].reaction = reaction;
     _adminRows[_adminDetailIdx].introducer = introducerName;
+    _adminRows[_adminDetailIdx].tmLocation = tmLocation;
+    _adminRows[_adminDetailIdx].tmDatetime = tmDatetime;
     renderAdminList();
     closeAdminDetail();
   } catch(e) {
@@ -1646,6 +1700,72 @@ async function doTransfer(introducerName) {
 document.getElementById('adminDetailBackdrop').addEventListener('click', function(e) {
   if (e.target === this) closeAdminDetail();
 });
+
+/* ── 시간 선택 (신청 모달) ── */
+(function() {
+  // 세션 내에서 동일한 잔여 수를 유지하는 시드 기반 랜덤
+  let seed = Date.now() % 99991;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+    return (seed >>> 0) / 4294967295;
+  }
+  function genRemaining(max) {
+    // 0(마감)이 약 15% 확률
+    const v = Math.floor(rand() * (max + 2));
+    return v <= 1 ? 0 : v;
+  }
+
+  let selHour = null, selMin = null;
+
+  const hourRem = {};
+  for (let h = 9; h <= 24; h++) hourRem[h] = genRemaining(7);
+  const minRem = {};
+  ['00','15','30','45'].forEach(m => { minRem[m] = genRemaining(5); });
+
+  function renderHours() {
+    const wrap = document.getElementById('timeHourBtns');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    for (let h = 9; h <= 24; h++) {
+      const rem = hourRem[h];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const cls = ['time-slot-btn'];
+      if (rem === 0) cls.push('sold');
+      if (selHour === h) cls.push('sel');
+      btn.className = cls.join(' ');
+      btn.innerHTML = h + '시<span class="time-slot-remaining">' + (rem === 0 ? '마감' : rem + '개') + '</span>';
+      if (rem > 0) btn.addEventListener('click', function() { selHour = h; renderHours(); });
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderMins() {
+    const wrap = document.getElementById('timeMinBtns');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    ['00','15','30','45'].forEach(function(m) {
+      const rem = minRem[m];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const cls = ['time-slot-btn'];
+      if (rem === 0) cls.push('sold');
+      if (selMin === m) cls.push('sel');
+      btn.className = cls.join(' ');
+      btn.innerHTML = m + '분<span class="time-slot-remaining">' + (rem === 0 ? '마감' : rem + '개') + '</span>';
+      if (rem > 0) btn.addEventListener('click', function() { selMin = m; renderMins(); });
+      wrap.appendChild(btn);
+    });
+  }
+
+  window._getSelectedTime = function() {
+    if (selHour === null || selMin === null) return null;
+    return String(selHour).padStart(2,'0') + ':' + selMin;
+  };
+
+  renderHours();
+  renderMins();
+})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </body>
