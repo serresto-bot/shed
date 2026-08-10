@@ -1654,11 +1654,19 @@ function openAdminDetail(idx) {
       _timeVal = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
     }
   }
-  if (!_dateVal) {
-    const t = new Date();
-    _dateVal = t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0');
-  }
   if (!_timeVal) _timeVal = _extractTime(r.selectedTime);
+  if (!_dateVal) {
+    const now = new Date();
+    const base = new Date();
+    // 선택 시간이 현재 시각보다 이미 지났으면 내일로
+    if (_timeVal) {
+      const [sh, sm] = _timeVal.split(':').map(Number);
+      const selMinutes = sh * 60 + sm;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (selMinutes <= nowMinutes) base.setDate(base.getDate() + 1);
+    }
+    _dateVal = base.getFullYear() + '-' + String(base.getMonth()+1).padStart(2,'0') + '-' + String(base.getDate()).padStart(2,'0');
+  }
   document.getElementById('adminTmDate').value = _dateVal;
   document.getElementById('adminTmTime').value = _timeVal;
   document.getElementById('introducerList').innerHTML = '';
