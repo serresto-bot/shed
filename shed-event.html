@@ -1703,24 +1703,30 @@ document.getElementById('adminDetailBackdrop').addEventListener('click', functio
 
 /* ── 시간 선택 (신청 모달) ── */
 (function() {
-  // 세션 내에서 동일한 잔여 수를 유지하는 시드 기반 랜덤
   let seed = Date.now() % 99991;
   function rand() {
     seed = (seed * 1664525 + 1013904223) & 0xffffffff;
     return (seed >>> 0) / 4294967295;
   }
-  function genRemaining(max) {
-    // 0(마감)이 약 15% 확률
+  function genRem(max) {
     const v = Math.floor(rand() * (max + 2));
     return v <= 1 ? 0 : v;
   }
 
   let selHour = null, selMin = null;
+  const MINS = ['00','15','30','45'];
 
+  // 시간×분 2D 슬롯 잔여 수
+  const slotRem = {};
+  for (let h = 9; h <= 24; h++) {
+    slotRem[h] = {};
+    MINS.forEach(m => { slotRem[h][m] = genRem(5); });
+  }
+  // 시간 버튼 잔여 = 해당 시간대 분 슬롯 중 최대값 기준
   const hourRem = {};
-  for (let h = 9; h <= 24; h++) hourRem[h] = genRemaining(7);
-  const minRem = {};
-  ['00','15','30','45'].forEach(m => { minRem[m] = genRemaining(5); });
+  for (let h = 9; h <= 24; h++) {
+    hourRem[h] = Math.max(...MINS.map(m => slotRem[h][m]));
+  }
 
   function renderHours() {
     const wrap = document.getElementById('timeHourBtns');
@@ -1735,7 +1741,10 @@ document.getElementById('adminDetailBackdrop').addEventListener('click', functio
       if (selHour === h) cls.push('sel');
       btn.className = cls.join(' ');
       btn.innerHTML = h + '시<span class="time-slot-remaining">' + (rem === 0 ? '마감' : rem + '개') + '</span>';
-      if (rem > 0) btn.addEventListener('click', function() { selHour = h; renderHours(); });
+      if (rem > 0) btn.addEventListener('click', function() {
+        selHour = h; selMin = null;
+        renderHours(); renderMins();
+      });
       wrap.appendChild(btn);
     }
   }
@@ -1744,16 +1753,24 @@ document.getElementById('adminDetailBackdrop').addEventListener('click', functio
     const wrap = document.getElementById('timeMinBtns');
     if (!wrap) return;
     wrap.innerHTML = '';
-    ['00','15','30','45'].forEach(function(m) {
-      const rem = minRem[m];
+    MINS.forEach(function(m) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      const cls = ['time-slot-btn'];
-      if (rem === 0) cls.push('sold');
-      if (selMin === m) cls.push('sel');
-      btn.className = cls.join(' ');
-      btn.innerHTML = m + '분<span class="time-slot-remaining">' + (rem === 0 ? '마감' : rem + '개') + '</span>';
-      if (rem > 0) btn.addEventListener('click', function() { selMin = m; renderMins(); });
+      if (selHour === null) {
+        // 시간 미선택: 라벨만, 클릭 불가
+        btn.className = 'time-slot-btn sold';
+        btn.style.opacity = '.3';
+        btn.style.textDecoration = 'none';
+        btn.innerHTML = m + '분';
+      } else {
+        const rem = slotRem[selHour][m];
+        const cls = ['time-slot-btn'];
+        if (rem === 0) cls.push('sold');
+        if (selMin === m) cls.push('sel');
+        btn.className = cls.join(' ');
+        btn.innerHTML = m + '분<span class="time-slot-remaining">' + (rem === 0 ? '마감' : rem + '개') + '</span>';
+        if (rem > 0) btn.addEventListener('click', function() { selMin = m; renderMins(); });
+      }
       wrap.appendChild(btn);
     });
   }
